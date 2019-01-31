@@ -28,11 +28,6 @@
                    </div>
 
                    <div class="uk-margin">
-                       <label class="uk-text-small">@lang('Group')</label>
-                       <input class="uk-width-1-1 uk-form-large" type="text" ref="group" bind="collection.group">
-                   </div>
-
-                   <div class="uk-margin">
                        <label class="uk-text-small">@lang('Icon')</label>
                        <div data-uk-dropdown="pos:'right-center', mode:'click'">
                            <a><img class="uk-display-block uk-margin uk-container-center" riot-src="{ collection.icon ? '@url('assets:app/media/icons/')'+collection.icon : '@url('collections:icon.svg')'}" alt="icon" width="100"></a>
@@ -201,24 +196,23 @@
 
                 </div>
 
+
+                <div class="uk-margin-large-top" show="{ collection.fields.length }">
+
+                    <div class="uk-button-group">
+                        <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
+                        <a class="uk-button uk-button-large" href="@route('/collections/entries')/{ collection.name }" if="{ collection._id }">@lang('Show entries')</a>
+                    </div>
+
+                    <a class="uk-button uk-button-large uk-button-link" href="@route('/collections')">
+                        <span show="{ !collection._id }">@lang('Cancel')</span>
+                        <span show="{ collection._id }">@lang('Close')</span>
+                    </a>
+                </div>
+
             </div>
 
         </div>
-
-        <cp-actionbar>
-            <div class="uk-container uk-container-center">
-
-                <div class="uk-button-group">
-                    <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
-                    <a class="uk-button uk-button-large" href="@route('/collections/entries')/{ collection.name }" if="{ collection._id }">@lang('Show entries')</a>
-                </div>
-
-                <a class="uk-button uk-button-large uk-button-link" href="@route('/collections')">
-                    <span show="{ !collection._id }">@lang('Cancel')</span>
-                    <span show="{ collection._id }">@lang('Close')</span>
-                </a>
-            </div>
-        </cp-actionbar>
 
     </form>
 
@@ -280,10 +274,6 @@
 
             // bind clobal command + save
             Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function(e) {
-
-                if (App.$('.uk-modal.uk-open').length) {
-                    return;
-                }
 
                 e.preventDefault();
                 $this.submit();

@@ -62,8 +62,6 @@ $this->module('forms')->extend([
             return false;
         }
 
-        if (function_exists('opcache_reset')) opcache_reset();
-
         return $form;
     },
 
@@ -80,10 +78,10 @@ $this->module('forms')->extend([
 
         if ($form = $this->form($name)) {
 
-            $form = $form['_id'];
+            $form = $forms['_id'];
 
             $this->app->helper('fs')->delete("#storage:forms/{$name}.form.php");
-            $this->app->storage->dropCollection("forms/{$form}");
+            $this->app->storage->dropform("forms/{$form}");
 
             return true;
         }
@@ -267,7 +265,7 @@ $this->module('forms')->extend([
             foreach ($emails as $to){
 
                 // Validate each email address individually, push if valid
-                if ($this->app->helper('utils')->isEmail($to)){
+                if (filter_var($to, FILTER_VALIDATE_EMAIL)){
                     $filtered_emails[] = $to;
                 }
             }
@@ -296,11 +294,7 @@ $this->module('forms')->extend([
 
                 $formname = isset($frm['label']) && trim($frm['label']) ? $frm['label'] : $form;
 
-                try {
-                    $response = $this->app->mailer->mail($frm['email_forward'], $options['subject'] ?? "New form data for: {$formname}", $body, $options);
-                } catch (\Exception $e) {
-                    $response = $e->getMessage();
-                }
+                $this->app->mailer->mail($frm['email_forward'], $options['subject'] ?? "New form data for: {$formname}", $body, $options);
             }
         }
 
@@ -311,12 +305,12 @@ $this->module('forms')->extend([
 
         $this->app->trigger('forms.submit.after', [$form, &$data, $frm]);
 
-        return (isset($response) && $response !== true) ? ['error' => $response, 'data' => $data] : $data;
+        return $data;
     }
 ]);
 
 // ACL
-$app('acl')->addResource('forms', ['create', 'delete', 'manage']);
+$app('acl')->addResource('forms', ['manage']);
 
 
 // REST

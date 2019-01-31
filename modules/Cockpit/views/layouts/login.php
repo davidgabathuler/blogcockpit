@@ -128,9 +128,7 @@
 
                     this.update();
 
-                }.bind(this), function(res) {
-                    App.ui.notify(res && (res.message || res.error) ? (res.message || res.error) : 'Login failed.', 'danger');
-                });
+                }.bind(this));
 
                 return false;
             }

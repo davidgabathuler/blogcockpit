@@ -109,8 +109,7 @@ CodeMirror.defineMode("yaml", function() {
         escaped: false
       };
     },
-    lineComment: "#",
-    fold: "indent"
+    lineComment: "#"
   };
 });
 

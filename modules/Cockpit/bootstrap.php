@@ -56,7 +56,7 @@ $this->module('cockpit')->extend([
 
         if (file_exists($container)) {
             $data = include($container);
-            $data = @unserialize($this->app->decode($data, $this->app['sec-key']));
+            $data = unserialize($this->app->decode($data, $this->app['sec-key']));
 
             if ($data !== false) {
                 $keys = array_merge($keys, $data);
@@ -307,9 +307,9 @@ if (COCKPIT_ADMIN && !COCKPIT_API_REQUEST) {
 
     include_once(__DIR__.'/admin.php');
 
-    $this->bind('/cockpit-api.js', function() {
+    $this->bind('/api.js', function() {
 
-        $token = $this->param('token', '');
+        $token                = $this->param('token', '');
         $this->response->mime = 'js';
 
         $apiurl = ($this->req_is('ssl') ? 'https':'http').'://';

@@ -27,13 +27,9 @@
                 editor = new JSONEditor(this.refs.input, {
                     modes: ['tree', 'code'],
                     mode: 'code',
-                    onError: function(e) {},
-                    onChange: function() {
-                        
-                        try {
-                            $this.value = editor.get() || {};
-                            $this.$setValue($this.value, true);
-                        } catch(e) {}
+                    onChange: function(){
+                        $this.value = editor.get() || {};
+                        $this.$setValue($this.value, true);
                     }
                 });
 
@@ -49,7 +45,7 @@
             if (typeof(value) != 'object') {
                 value = {};
             }
-            
+
             if (JSON.stringify(this.value) != JSON.stringify(value)) {
                 this.value = value || {};
                 if (editor)  {

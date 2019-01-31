@@ -109,12 +109,10 @@
 
                         @trigger('cockpit.account.editview')
 
-                        <cp-actionbar>
-                            <div class="uk-container uk-container-center">
-                                <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
-                                <a class="uk-button uk-button-large uk-button-link" href="@route('/accounts')">@lang('Cancel')</a>
-                            </div>
-                        </cp-actionbar>
+                        <div class="uk-margin-large-top">
+                            <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
+                            <a class="uk-button uk-button-large uk-button-link" href="@route('/accounts')">@lang('Cancel')</a>
+                        </div>
 
                     </form>
 
@@ -226,10 +224,6 @@
 
             // bind clobal command + save
             Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function(e) {
-
-                if (App.$('.uk-modal.uk-open').length) {
-                    return;
-                }
 
                 e.preventDefault();
                 $this.submit();

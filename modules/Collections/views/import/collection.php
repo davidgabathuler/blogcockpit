@@ -246,10 +246,6 @@
 
                 $this.data = data;
 
-                if (data.headers.indexOf('_id') != -1) {
-                    $this.fields.unshift({name:'_id', options:{}});
-                }
-
                 // auto-map fields
                 $this.fields.forEach(function(f){
                     if (data.headers.indexOf(f.name) != -1) {
@@ -339,7 +335,7 @@
 
                         Promise.all(promises).then(function(){
 
-                            App.request('/collections/import/execute',{collection: $this.collection.name, entries: entries}).then(function(data) {
+                            App.callmodule('collections:save',[$this.collection.name, entries]).then(function(data) {
 
                                 progress += cnt;
 
@@ -355,17 +351,11 @@
                                     $this.update();
                                 }
 
-                                resolve(data);
-
-                            }, function() {
-                                App.ui.notify('Import failed.', 'danger');
-                                $this.restart();
-                                $this.update();
+                                resolve(data && data.result);
                             });
-
                         }, function(msg) {
 
-                            App.ui.notify(msg, 'danger');
+                            App.ui.notify(msg, "danger");
 
                             progress += cnt;
 

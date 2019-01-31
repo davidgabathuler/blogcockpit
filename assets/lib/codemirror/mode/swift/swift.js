@@ -73,8 +73,9 @@
       stream.match("..")
       return "punctuation"
     }
-    if (ch = stream.match(/("{3}|"|')/)) {
-      var tokenize = tokenString(ch[0])
+    if (ch == '"' || ch == "'") {
+      stream.next()
+      var tokenize = tokenString(ch)
       state.tokenize.push(tokenize)
       return tokenize(stream, state)
     }
@@ -116,7 +117,6 @@
   }
 
   function tokenString(quote) {
-    var singleLine = quote.length == 1
     return function(stream, state) {
       var ch, escaped = false
       while (ch = stream.next()) {
@@ -126,16 +126,13 @@
             return "string"
           }
           escaped = false
-        } else if (stream.match(quote)) {
-          state.tokenize.pop()
-          return "string"
+        } else if (ch == quote) {
+          break
         } else {
           escaped = ch == "\\"
         }
       }
-      if (singleLine) {
-        state.tokenize.pop()
-      }
+      state.tokenize.pop()
       return "string"
     }
   }

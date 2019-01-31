@@ -44,22 +44,16 @@
                         $this.$setValue(editor.editor.getValue());
                     });
 
-                    var buttons = {};
-
-                    if (App.$data.acl.finder) {
-
-                        buttons.cpfinder = {
+                    editor.addButtons({
+                        cpfinder: {
                             title : 'Finder',
                             label : '<i class="uk-icon-folder-open"></i>'
-                        };
-                    }
-
-                    buttons.cpasset = {
-                        title : 'Asset',
-                        label : '<i class="uk-icon-cloud"></i>'
-                    };
-
-                    editor.addButtons(buttons);
+                        },
+                        cpasset: {
+                            title : 'Asset',
+                            label : '<i class="uk-icon-cloud"></i>'
+                        }
+                    });
 
                     editor.on('action.cpfinder', function() {
                         App.media.select(function(selected) {

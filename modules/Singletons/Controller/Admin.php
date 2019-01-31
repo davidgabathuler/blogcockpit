@@ -7,29 +7,17 @@ class Admin extends \Cockpit\AuthController {
 
     public function index() {
 
-        $_singletons = $this->module('singletons')->getSingletonsInGroup();
-        $singletons  = [];
+        $singletons = $this->module('singletons')->getSingletonsInGroup();
 
-        foreach ($_singletons as $name => $meta) {
+        foreach ($singletons as $name => $meta) {
 
-            $meta['allowed'] = [
+            $singletons[$name]['allowed'] = [
                 'delete' => $this->module('cockpit')->hasaccess('singletons', 'delete'),
                 'create' => $this->module('cockpit')->hasaccess('singletons', 'create'),
                 'singleton_edit' => $this->module('singletons')->hasaccess($name, 'edit'),
                 'singleton_form' => $this->module('singletons')->hasaccess($name, 'form')
             ];
-
-            $singletons[] = [
-              'name'  => $name,
-              'label' => isset($meta['label']) && $meta['label'] ? $meta['label'] : $name,
-              'meta'  => $meta
-            ];
         }
-
-        // sort singletons
-        usort($singletons, function($a, $b) {
-            return mb_strtolower($a['label']) <=> mb_strtolower($b['label']);
-        });
 
         return $this->render('singletons:views/index.php', compact('singletons'));
     }
@@ -135,7 +123,7 @@ class Admin extends \Cockpit\AuthController {
             $revision = true;
         }
 
-        $this->module('singletons')->saveData($singleton['name'], $data, ['revision' => $revision]);
+        $singleton = $this->module('singletons')->saveData($singleton['name'], $data, ['revision' => $revision]);
 
         return ['data' => $data];
     }

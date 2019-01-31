@@ -90,7 +90,7 @@ class RestApi extends \LimeExtra\Controller {
             }
         }
 
-        if (isset($data['email']) && !$this->app->helper('utils')->isEmail($data['email'])) {
+        if (isset($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             return $this->stop(['error' => 'Valid email required'], 412);
         }
 
@@ -104,21 +104,21 @@ class RestApi extends \LimeExtra\Controller {
 
         // unique check
         // --
-        if (isset($data['user'])) {
+        $exists = $this->app->storage->find('cockpit/accounts', [
+            'filter' => [
+                '$or' => [
+                    ['user'  => $data['user']],
+                    ['email' => $data['email']],
+                ]
+            ],
+            'limit' => 2
+        ]);
 
-            $_account = $this->app->storage->findOne('cockpit/accounts', ['user'  => $data['user']]);
+        foreach ($exists as $e) {
 
-            if ($_account && (!isset($data['_id']) || $data['_id'] != $_account['_id'])) {
-                $this->app->stop(['error' =>  'Username is already used!'], 412);
-            }
-        }
-
-        if (isset($data['email'])) {
-
-            $_account = $this->app->storage->findOne('cockpit/accounts', ['email'  => $data['email']]);
-
-            if ($_account && (!isset($data['_id']) || $data['_id'] != $_account['_id'])) {
-                $this->app->stop(['error' =>  'Email is already used!'], 412);
+            if (!isset($data['_id']) || $data['_id'] != $e['_id']) {
+                $field = $e['user'] == $data['user'] ? 'Username' : 'Email';
+                $this->app->stop(['error' =>  "{$field} is already used!"], 412);
             }
         }
         // --
@@ -137,16 +137,12 @@ class RestApi extends \LimeExtra\Controller {
 
         $user    = $this->module('cockpit')->getUser();
         $isAdmin = false;
-        $options = array_merge(['sort' => ['user' => 1]], $this->param('options', []));
 
         if ($user) {
-
-            if (!$this->module('cockpit')->hasaccess('cockpit', 'accounts')) {
-                return $this->stop(401);
-            }
-
             $isAdmin = $this->module('cockpit')->isSuperAdmin($user['group']);
         }
+
+        $options = ['sort' => ['user' => 1]];
 
         if ($filter = $this->param('filter')) {
 
@@ -164,7 +160,7 @@ class RestApi extends \LimeExtra\Controller {
             }
         }
 
-        $accounts = $this->app->storage->find('cockpit/accounts', $options)->toArray();
+        $accounts = $this->storage->find('cockpit/accounts', $options)->toArray();
 
         foreach ($accounts as &$account) {
 

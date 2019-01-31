@@ -75,8 +75,6 @@ $this->module('singletons')->extend([
         $this->app->trigger('singleton.save.after', [$singleton]);
         $this->app->trigger("singleton.save.after.{$name}", [$singleton]);
 
-        if (function_exists('opcache_reset')) opcache_reset();
-
         return $singleton;
     },
 
@@ -209,13 +207,20 @@ $this->module('singletons')->extend([
         return ($data && isset($data[$fieldname])) ? $data[$fieldname] : $default;
     },
 
-    '_filterFields' => function($data, $singleton, $filter) {
+    '_filterFields' => function($items, $singleton, $filter) {
 
         static $cache;
         static $languages;
 
-        if (null === $data) {
-            return $data;
+        if (null === $items) {
+            return $items;
+        }
+
+        $single = false;
+
+        if (!isset($items[0]) && count($items)) {
+            $items = [$items];
+            $single = true;
         }
 
         $filter = array_merge([
@@ -234,7 +239,7 @@ $this->module('singletons')->extend([
 
             $languages = [];
 
-            foreach ($this->app->retrieve('config/languages', []) as $key => $val) {
+            foreach($this->app->retrieve('config/languages', []) as $key => $val) {
                 if (is_numeric($key)) $key = $val;
                 $languages[] = $key;
             }
@@ -268,65 +273,74 @@ $this->module('singletons')->extend([
         if ($user && count($cache[$singleton['name']]['acl'])) {
 
             $aclfields = $cache[$singleton['name']]['acl'];
+            $items     = array_map(function($entry) use($user, $aclfields, $languages) {
 
-            foreach ($aclfields as $name => $acl) {
+                foreach ($aclfields as $name => $acl) {
 
-                if (!( in_array($user['group'], $acl) || in_array($user['_id'], $acl) )) {
+                    if (!( in_array($user['group'], $acl) || in_array($user['_id'], $acl) )) {
 
-                    unset($data[$name]);
+                        unset($entry[$name]);
 
-                    if (count($languages)) {
+                        if (count($languages)) {
 
-                        foreach ($languages as $l) {
-                            if (isset($data["{$name}_{$l}"])) {
-                                unset($data["{$name}_{$l}"]);
-                                unset($data["{$name}_{$l}_slug"]);
+                            foreach($languages as $l) {
+                                if (isset($entry["{$name}_{$l}"])) {
+                                    unset($entry["{$name}_{$l}"]);
+                                    unset($entry["{$name}_{$l}_slug"]);
+                                }
                             }
                         }
                     }
                 }
-            }
+
+                return $entry;
+
+            }, $items);
         }
 
         if ($lang && count($languages) && count($cache[$singleton['name']]['localize'])) {
 
             $localfields = $cache[$singleton['name']]['localize'];
+            $items = array_map(function($entry) use($localfields, $lang, $languages, $ignoreDefaultFallback) {
 
-            foreach ($localfields as $name => $local) {
+                foreach ($localfields as $name => $local) {
 
-                foreach ($languages as $l) {
+                    foreach ($languages as $l) {
 
-                    if (isset($data["{$name}_{$l}"])) {
+                        if (isset($entry["{$name}_{$l}"])) {
+                            if ($l == $lang) {
 
-                        if ($l == $lang) {
+                                $entry[$name] = $entry["{$name}_{$l}"];
 
-                            $data[$name] = $data["{$name}_{$l}"];
+                                if (isset($entry["{$name}_{$l}_slug"])) {
+                                    $entry["{$name}_slug"] = $entry["{$name}_{$l}_slug"];
+                                }
+                            }
 
-                            if (isset($data["{$name}_{$l}_slug"])) {
-                                $data["{$name}_slug"] = $data["{$name}_{$l}_slug"];
+                            unset($entry["{$name}_{$l}"]);
+                            unset($entry["{$name}_{$l}_slug"]);
+
+                        } elseif ($l == $lang && $ignoreDefaultFallback) {
+
+                            if ($ignoreDefaultFallback === true || (is_array($ignoreDefaultFallback) && in_array($name, $ignoreDefaultFallback))) {
+                                $entry[$name] = null;
                             }
                         }
-
-                    } elseif ($l == $lang && $ignoreDefaultFallback) {
-
-                        if ($ignoreDefaultFallback === true || (is_array($ignoreDefaultFallback) && in_array($name, $ignoreDefaultFallback))) {
-                            $data[$name] = null;
-                        }
                     }
-
-                    unset($data["{$name}_{$l}"]);
-                    unset($data["{$name}_{$l}_slug"]);
                 }
-            }
+
+                return $entry;
+
+            }, $items);
         }
 
-        return $data;
+        return $single ? $items[0] : $items;
     }
 
 ]);
 
 // ACL
-$app("acl")->addResource('singletons', ['create', 'form', 'edit', 'data', 'delete', 'manage']);
+$app("acl")->addResource('singletons', ['create', 'form', 'edit', 'data', 'delete']);
 
 $this->module('singletons')->extend([
 

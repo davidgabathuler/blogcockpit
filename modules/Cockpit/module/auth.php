@@ -37,8 +37,6 @@ $this->module('cockpit')->extend([
             $app('session')->write('cockpit.app.auth', $user);
         }
 
-        $app->trigger('cockpit.auth.setuser', [&$user, $permanent]);
-
         $app['cockpit.auth.user'] = $user;
     },
 
@@ -58,7 +56,6 @@ $this->module('cockpit')->extend([
     },
 
     'logout' => function() use($app) {
-        $app->trigger('cockpit.account.logout', [$this->getUser()]);
         $app('session')->delete('cockpit.app.auth');
     },
 
@@ -162,7 +159,7 @@ $this->module('cockpit')->extend([
 
 // ACL
 $app('acl')->addResource('cockpit', [
-    'backend', 'finder', 'accounts', 'settings', 'rest', 'webhooks', 'info'
+    'backend', 'finder',
 ]);
 
 

@@ -19,9 +19,7 @@ require(__DIR__.'/../bootstrap.php');
 // misc checks
 $checks = array(
     'Php version >= 7.1.0'                              => (version_compare(PHP_VERSION, '7.1.0') >= 0),
-    'Missing PDO extension with Sqlite support'         => $sqlitesupport,
-    'GD extension not available'                        => extension_loaded('gd'),
-    'MBString extension not available'                  => extension_loaded('mbstring'),
+    'PDO extension loaded with Sqlite support'          => $sqlitesupport,
     'Data  folder is not writable: /storage/data'       => is_writable(COCKPIT_STORAGE_FOLDER.'/data'),
     'Cache folder is not writable: /storage/cache'      => is_writable(COCKPIT_STORAGE_FOLDER.'/cache'),
     'Temp folder is not writable: /storage/tmp'         => is_writable(COCKPIT_STORAGE_FOLDER.'/tmp'),

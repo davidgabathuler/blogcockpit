@@ -35,12 +35,7 @@
   // Strings and string interpolation.
   MT("strings",
      "[keyword var] [def a][punctuation :] [variable-2 String] [operator =] [string \"test\"]",
-     "[keyword var] [def b][punctuation :] [variable-2 String] [operator =] [string \"\\(][variable a][string )\"]",
-     "[keyword var] [def c] [operator =] [string \"\"\"]",
-     "[string multi]",
-     "[string line]",
-     "[string \"test\"]",
-     "[string \"\"\"]");
+     "[keyword var] [def b][punctuation :] [variable-2 String] [operator =] [string \"\\(][variable a][string )\"]");
 
   // Comments.
   MT("comments",

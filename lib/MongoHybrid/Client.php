@@ -7,13 +7,13 @@ class Client {
     protected $driver;
     public $type;
 
-    public function __construct($server, $options=[], $driverOptions=[]) {
+    public function __construct($server, $options=[]) {
 
         if (strpos($server, 'mongodb://')===0) {
 
             $cls = class_exists('\MongoClient') ? 'MongoHybrid\\MongoLegacy':'MongoHybrid\\Mongo';
 
-            $this->driver = new $cls($server, $options, $driverOptions);
+            $this->driver = new $cls($server, $options);
             $this->type = 'mongodb';
         }
 

@@ -6,24 +6,7 @@ class Admin extends \Cockpit\AuthController {
 
     public function index() {
 
-        $_forms = $this->module('forms')->forms(true);
-        $forms  = [];
-
-        foreach ($_forms as $name => $meta) {
-
-           $forms[] = [
-             'name' => $name,
-             'label' => isset($meta['label']) && $meta['label'] ? $meta['label'] : $name,
-             'meta' => $meta
-           ];
-        }
-
-        // sort forms
-        usort($forms, function($a, $b) {
-            return mb_strtolower($a['label']) <=> mb_strtolower($b['label']);
-        });
-
-        return $this->render('forms:views/index.php', compact('forms'));
+        return $this->render('forms:views/index.php');
     }
 
     public function form($name = null) {

@@ -99,7 +99,7 @@ class Accounts extends \Cockpit\AuthController {
                 }
             }
 
-            if (isset($data['email']) && !$this->helper('utils')->isEmail($data['email'])) {
+            if (isset($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
                 return $this->stop(['error' => 'Valid email required'], 412);
             }
 
@@ -113,21 +113,21 @@ class Accounts extends \Cockpit\AuthController {
 
             // unique check
             // --
-            if (isset($data['user'])) {
+            $exists = $this->app->storage->find('cockpit/accounts', [
+                'filter' => [
+                    '$or' => [
+                        ['user'  => $data['user']],
+                        ['email' => $data['email']],
+                    ]
+                ],
+                'limit' => 2
+            ]);
 
-                $_account = $this->app->storage->findOne('cockpit/accounts', ['user'  => $data['user']]);
+            foreach ($exists as $e) {
 
-                if ($_account && (!isset($data['_id']) || $data['_id'] != $_account['_id'])) {
-                    $this->app->stop(['error' =>  'Username is already used!'], 412);
-                }
-            }
-
-            if (isset($data['email'])) {
-
-                $_account = $this->app->storage->findOne('cockpit/accounts', ['email'  => $data['email']]);
-
-                if ($_account && (!isset($data['_id']) || $data['_id'] != $_account['_id'])) {
-                    $this->app->stop(['error' =>  'Email is already used!'], 412);
+                if (!isset($data['_id']) || $data['_id'] != $e['_id']) {
+                    $field = $e['user'] == $data['user'] ? 'Username' : 'Email';
+                    $this->app->stop(['error' =>  "{$field} is already used!"], 412);
                 }
             }
             // --
@@ -190,8 +190,8 @@ class Accounts extends \Cockpit\AuthController {
             }
         }
 
-        $accounts = $this->app->storage->find('cockpit/accounts', $options)->toArray();
-        $count    = (!isset($options['skip']) && !isset($options['limit'])) ? count($accounts) : $this->app->storage->count('cockpit/accounts', isset($options['filter']) ? $options['filter'] : []);
+        $accounts = $this->storage->find('cockpit/accounts', $options)->toArray();
+        $count    = (!isset($options['skip']) && !isset($options['limit'])) ? count($accounts) : $this->storage->count('cockpit/accounts', isset($options['filter']) ? $options['filter'] : []);
         $pages    = isset($options['limit']) ? ceil($count / $options['limit']) : 1;
         $page     = 1;
 

@@ -322,18 +322,10 @@ class UtilArrayQuery {
             case '$eq' :
                 $r = $a == $b;
                 break;
-
             case '$not' :
-            case '$ne' :
                 $r = $a != $b;
                 break;
-
             case '$gte' :
-                if ( (is_numeric($a) && is_numeric($b)) || (is_string($a) && is_string($b)) ) {
-                    $r = $a >= $b;
-                }
-                break;
-
             case '$gt' :
                 if ( (is_numeric($a) && is_numeric($b)) || (is_string($a) && is_string($b)) ) {
                     $r = $a > $b;
@@ -341,17 +333,11 @@ class UtilArrayQuery {
                 break;
 
             case '$lte' :
-                if ( (is_numeric($a) && is_numeric($b)) || (is_string($a) && is_string($b)) ) {
-                    $r = $a <= $b;
-                }
-                break;
-
             case '$lt' :
                 if ( (is_numeric($a) && is_numeric($b)) || (is_string($a) && is_string($b)) ) {
                     $r = $a < $b;
                 }
                 break;
-
             case '$in' :
                 if (is_array($a)) {
                     $r = is_array($b) ? count(array_intersect($a, $b)) : false;

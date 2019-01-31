@@ -82,17 +82,15 @@
 
         </div>
 
-        <cp-actionbar>
-            <div class="uk-container uk-container-center">
+        <div class="uk-margin-large-top">
 
-                <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
+            <button class="uk-button uk-button-large uk-button-primary">@lang('Save')</button>
 
-                <a class="uk-button uk-button-large uk-button-link" href="@route('/forms')">
-                    <span show="{ !form._id }">@lang('Cancel')</span>
-                    <span show="{ form._id }">@lang('Close')</span>
-                </a>
-            </div>
-        </cp-actionbar>
+            <a class="uk-button uk-button-large uk-button-link" href="@route('/forms')">
+                <span show="{ !form._id }">@lang('Cancel')</span>
+                <span show="{ form._id }">@lang('Close')</span>
+            </a>
+        </div>
 
     </form>
 

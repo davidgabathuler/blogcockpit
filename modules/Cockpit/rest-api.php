@@ -53,7 +53,7 @@ $this->on('before', function() {
                             break;
                         }
 
-                        foreach (explode("\n", $rules) as $rule) {
+                        foreach(explode("\n", $rules) as $rule) {
 
                             $rule = trim($rule);
                             if (!$rule) continue;
@@ -133,11 +133,6 @@ $this->on('before', function() {
                     $output['message'] = 'Oooops, something went wrong.';
                 }
             }
-        }
-
-        if ($output === false && $resource == 'public') {
-            $this->response->mime = 'json';
-            $this->stop(404);
         }
 
         if ($output === false && !$allowed) {

@@ -8,29 +8,16 @@ class Admin extends \Cockpit\AuthController {
 
     public function index() {
 
-        $_collections = $this->module('collections')->getCollectionsInGroup(null, true);
-        $collections  = [];
+        $collections = $this->module('collections')->getCollectionsInGroup(null, true);
 
-        foreach ($_collections as $collection => $meta) {
-
-            $meta['allowed'] = [
+        foreach ($collections as $collection => $meta) {
+            $collections[$collection]['allowed'] = [
                 'delete' => $this->module('cockpit')->hasaccess('collections', 'delete'),
                 'create' => $this->module('cockpit')->hasaccess('collections', 'create'),
                 'edit' => $this->module('collections')->hasaccess($collection, 'collection_edit'),
                 'entries_create' => $this->module('collections')->hasaccess($collection, 'collection_create')
             ];
-
-            $collections[] = [
-              'name' => $collection,
-              'label' => isset($meta['label']) && $meta['label'] ? $meta['label'] : $collection,
-              'meta' => $meta
-            ];
         }
-
-        // sort collections
-        usort($collections, function($a, $b) {
-            return mb_strtolower($a['label']) <=> mb_strtolower($b['label']);
-        });
 
         return $this->render('collections:views/index.php', compact('collections'));
     }
