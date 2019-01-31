@@ -305,9 +305,10 @@ $this->module('singletons')->extend([
 
                 foreach ($localfields as $name => $local) {
 
-                    foreach ($languages as $l) {
+                    foreach($languages as $l) {
 
                         if (isset($entry["{$name}_{$l}"])) {
+
                             if ($l == $lang) {
 
                                 $entry[$name] = $entry["{$name}_{$l}"];

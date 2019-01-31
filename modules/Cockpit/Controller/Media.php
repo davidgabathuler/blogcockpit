@@ -307,11 +307,11 @@ class Media extends \Cockpit\AuthController {
             $this->app->stop();
         }
 
-        header('X-Accel-Buffering: no');
+        $files   = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($folder), \RecursiveIteratorIterator::LEAVES_ONLY);
+        $zipfile = $this->app->path('#tmp:').'/'.basename($folder).'_'.md5($folder).'.zip';
+        $zip     = new \ZipArchive();
 
-        $prefix = basename($path);
-        $files  = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($folder), \RecursiveIteratorIterator::LEAVES_ONLY);
-        $zip    = new \ZipStream\ZipStream("{$prefix}.zip");
+        $zip->open($zipfile, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
 
         foreach ($files as $name => $file) {
 
@@ -319,12 +319,14 @@ class Media extends \Cockpit\AuthController {
 
             $filePath = $file->getRealPath();
             $relativePath = substr($filePath, strlen($folder) + 1);
-            $zip->addFileFromPath("{$prefix}/{$relativePath}", $filePath);
+            $zip->addFile($filePath, $relativePath);
         }
 
-        $zip->finish();
+        $zip->close();
 
-        $this->app->stop();
+        header('Location: '.$this->app->pathToUrl($zipfile));
+
+        $this->app-stop();
     }
 
     protected function getfilelist() {

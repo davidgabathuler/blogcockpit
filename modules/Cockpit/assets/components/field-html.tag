@@ -4,7 +4,7 @@
 
     <script>
 
-        var $this = this, editor, evtSrc;
+        var $this = this, editor;
 
         this.value = '';
 
@@ -16,12 +16,12 @@
 
                 this.value = value;
 
-                if (editor && !evtSrc) {
+                if (editor && this._field != field) {
                     editor.editor.setValue(value || '', true);
                 }
             }
 
-            evtSrc = false;
+            this._field = field;
 
         }.bind(this);
 
@@ -40,7 +40,6 @@
                     editor = UIkit.htmleditor(this.refs.input, opts);
 
                     editor.editor.on('change', function() {
-                        evtSrc = true;
                         $this.$setValue(editor.editor.getValue());
                     });
 
@@ -73,12 +72,12 @@
 
                             if (Array.isArray(assets) && assets.length) {
 
-                                var asset = assets[0], isImage = asset.mime.match(/^image\//);
+                                var asset = assets[0];
 
                                 if (editor.getCursorMode() == 'markdown') {
-                                    editor['replaceSelection'](isImage ? '!['+asset.title+']('+ASSETS_URL+asset.path+')' : '['+asset.title+']('+ASSETS_URL+asset.path+')');
+                                    editor['replaceSelection']('['+asset.title+']('+ASSETS_URL+asset.path+')');
                                 } else {
-                                    editor['replaceSelection'](isImage ? '<img src="'+ASSETS_URL+asset.path+'" alt="'+asset.title+'">' : '<a href="'+ASSETS_URL+asset.path+'">'+asset.title+'</a>');
+                                    editor['replaceSelection']('<a src="'+ASSETS_URL+asset.path+'">'+asset.title+'</a>');
                                 }
                             }
                         });

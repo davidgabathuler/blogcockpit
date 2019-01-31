@@ -73,21 +73,7 @@ class Accounts extends \Cockpit\AuthController {
             $data['_modified'] = time();
 
             if (!isset($data['_id'])) {
-
-                // new user needs a password
-                if (!isset($data['password']) || !trim($data['password'])) {
-                    return $this->stop(['error' => 'User password required'], 412);
-                }
-
-                if (!isset($data['user']) || !trim($data['user'])) {
-                    return $this->stop(['error' => 'Username required'], 412);
-                }
-
                 $data['_created'] = $data['_modified'];
-            }
-
-            if (isset($data['group']) && !$this->module('cockpit')->hasaccess('cockpit', 'accounts')) {
-                unset($data['group']);
             }
 
             if (isset($data['password'])) {
@@ -99,40 +85,6 @@ class Accounts extends \Cockpit\AuthController {
                 }
             }
 
-            if (isset($data['email']) && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-                return $this->stop(['error' => 'Valid email required'], 412);
-            }
-
-            if (isset($data['user']) && !trim($data['user'])) {
-                return $this->stop(['error' => 'Username cannot be empty!'], 412);
-            }
-
-            foreach (['name', 'user', 'email'] as $key) {
-                if (isset($data[$key])) $data[$key] = strip_tags(trim($data[$key]));
-            }
-
-            // unique check
-            // --
-            $exists = $this->app->storage->find('cockpit/accounts', [
-                'filter' => [
-                    '$or' => [
-                        ['user'  => $data['user']],
-                        ['email' => $data['email']],
-                    ]
-                ],
-                'limit' => 2
-            ]);
-
-            foreach ($exists as $e) {
-
-                if (!isset($data['_id']) || $data['_id'] != $e['_id']) {
-                    $field = $e['user'] == $data['user'] ? 'Username' : 'Email';
-                    $this->app->stop(['error' =>  "{$field} is already used!"], 412);
-                }
-            }
-            // --
-
-            $this->app->trigger('cockpit.accounts.save', [&$data, isset($data['_id'])]);
             $this->app->storage->save('cockpit/accounts', $data);
 
             if (isset($data['password'])) {
@@ -151,10 +103,6 @@ class Accounts extends \Cockpit\AuthController {
     }
 
     public function remove() {
-
-        if (!$this->module('cockpit')->hasaccess('cockpit', 'accounts')) {
-            return $this->helper('admin')->denyRequest();
-        }
 
         if ($data = $this->param('account', false)) {
 
@@ -201,9 +149,11 @@ class Accounts extends \Cockpit\AuthController {
 
         foreach ($accounts as &$account) {
 
-            if (isset($account['password']))     unset($account['password']);
-            if (isset($account['api_key']))      unset($account['api_key']);
-            if (isset($account['_reset_token'])) unset($account['_reset_token']);
+            $account['md5email'] = md5(@$account['email']);
+
+            if (isset($account["password"])) {
+                unset($account["password"]);
+            }
         }
 
         return compact('accounts', 'count', 'pages', 'page');

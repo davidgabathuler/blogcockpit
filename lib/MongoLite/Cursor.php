@@ -15,7 +15,7 @@ class Cursor implements \Iterator {
     /**
      * @var array
      */
-    protected $data = [];
+    protected $data = array();
 
     /**
      * @var Collection object
@@ -72,7 +72,7 @@ class Cursor implements \Iterator {
 
         } else {
 
-            $sql = ['SELECT COUNT(*) AS C FROM '.$this->collection->name];
+            $sql = array('SELECT COUNT(*) AS C FROM '.$this->collection->name);
 
             $sql[] = 'WHERE document_criteria("'.$this->criteria.'", document)';
 
@@ -159,7 +159,7 @@ class Cursor implements \Iterator {
      */
     protected function getData() {
 
-        $sql = ['SELECT document FROM '.$this->collection->name];
+        $sql = array('SELECT document FROM '.$this->collection->name);
 
         if ($this->criteria) {
 
@@ -168,7 +168,7 @@ class Cursor implements \Iterator {
 
         if ($this->sort) {
 
-            $orders = [];
+            $orders = array();
 
             foreach ($this->sort as $field => $direction) {
                 $orders[] = 'document_key("'.$field.'", document) '.($direction==-1 ? "DESC":"ASC");
@@ -187,12 +187,12 @@ class Cursor implements \Iterator {
 
         $stmt      = $this->collection->database->connection->query($sql);
         $result    = $stmt->fetchAll( \PDO::FETCH_ASSOC);
-        $documents = [];
+        $documents = array();
 
         if (!$this->projection) {
 
             foreach ($result as &$doc) {
-                $documents[] = json_decode($doc['document'], true);
+                $documents[] = json_decode($doc["document"], true);
             }
 
         } else {
@@ -211,8 +211,8 @@ class Cursor implements \Iterator {
 
             foreach ($result as &$doc) {
 
-                $item = json_decode($doc['document'], true);
-                $id   = $item['_id'];
+                $item = json_decode($doc["document"], true);
+                $id   = $item["_id"];
 
                 if ($exclude) {
                     $item = array_diff_key($item, $exclude);
@@ -222,8 +222,8 @@ class Cursor implements \Iterator {
                     $item = array_key_intersect($item, $include);
                 }
 
-                if (!isset($exclude['_id'])) {
-                    $item['_id'] = $id;
+                if (!isset($exclude["_id"])) {
+                    $item["_id"] = $id;
                 }
 
                 $documents[] = $item;
@@ -259,7 +259,6 @@ class Cursor implements \Iterator {
     public function valid() {
 
         if ($this->position===false) {
-
             $this->data     = $this->getData();
             $this->position = 0;
         }
@@ -273,7 +272,7 @@ function array_key_intersect(&$a, &$b) {
 
     $array = [];
 
-    foreach ($a as $key => $value) {
+    while (list($key,$value) = each($a)) {
         if (isset($b[$key])) $array[$key] = $value;
     }
 

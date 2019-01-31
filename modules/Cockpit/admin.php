@@ -37,6 +37,8 @@ $assets = [
     // polyfills
     'assets:polyfills/dom4.js',
     'assets:polyfills/document-register-element.js',
+    'assets:polyfills/web-animations.min.js',
+    'assets:polyfills/pointer-events.js',
     'assets:polyfills/URLSearchParams.js',
 
     // libs
@@ -178,11 +180,6 @@ $app->on('after', function() {
             }
 
             $this->trigger('cockpit.request.error', ['500']);
-
-            if (function_exists('cockpit_error_handler')) {
-                cockpit_error_handler(error_get_last());
-            }
-
             break;
 
         case 401:

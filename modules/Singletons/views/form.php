@@ -28,7 +28,7 @@
     <div class="uk-margin-top" riot-view>
 
         <div class="uk-alert" if="{ !fields.length }">
-            @lang('No fields defined'). <a href="@route('/singletons/singleton')/{ singleton.name }">@lang('Define singleton fields').</a>
+            @lang('No fields defined'). <a href="@route('/singleton/singleton')/{ singleton.name }">@lang('Define singleton fields').</a>
         </div>
 
         <h3 class="uk-flex uk-flex-middle uk-text-bold">
@@ -100,47 +100,41 @@
 
             <div class="uk-grid-margin uk-width-medium-1-4 uk-flex-order-first uk-flex-order-last-medium">
 
-                <div class="uk-margin uk-form" if="{ languages.length }">
+                <div class="uk-panel">
 
-                    <div class="uk-width-1-1 uk-form-select">
+                    <div class="uk-margin uk-form" if="{ languages.length }">
 
-                        <label class="uk-text-small">@lang('Language')</label>
-                        <div class="uk-margin-small-top"><span class="uk-badge uk-badge-outline {lang ? 'uk-text-primary' : 'uk-text-muted'}">{ lang ? _.find(languages,{code:lang}).label:'Default' }</span></div>
+                        <div class="uk-width-1-1 uk-form-select">
 
-                        <select bind="lang">
-                            <option value="">@lang('Default')</option>
-                            <option each="{language in languages}" value="{language.code}">{language.label}</option>
-                        </select>
+                            <label class="uk-text-small">@lang('Language')</label>
+                            <div class="uk-margin-small-top"><span class="uk-badge uk-badge-outline {lang ? 'uk-text-primary' : 'uk-text-muted'}">{ lang ? _.find(languages,{code:lang}).label:'Default' }</span></div>
+
+                            <select bind="lang">
+                                <option value="">@lang('Default')</option>
+                                <option each="{language in languages}" value="{language.code}">{language.label}</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="uk-margin">
+                        <label class="uk-text-small">@lang('Revisions')</label>
+                        <div class="uk-margin-small-top">
+                            <span class="uk-position-relative">
+                                <cp-revisions-info class="uk-badge uk-text-large" rid="{singleton._id}"></cp-revisions-info>
+                                <a class="uk-position-cover" href="@route('/singletons/revisions/'.$singleton['name'])/{singleton._id}"></a>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="uk-margin">
+                        <label class="uk-text-small">@lang('Last Modified')</label>
+                        <div class="uk-margin-small-top uk-text-muted"><i class="uk-icon-calendar uk-margin-small-right"></i> {  App.Utils.dateformat( new Date( 1000 * singleton._modified )) }</div>
                     </div>
 
                 </div>
-
-                <div class="uk-margin">
-                    <label class="uk-text-small">@lang('Last Modified')</label>
-                    <div class="uk-margin-small-top uk-text-muted"><i class="uk-icon-calendar uk-margin-small-right"></i> {  App.Utils.dateformat( new Date( 1000 * singleton._modified )) }</div>
-                </div>
-
-                <div class="uk-margin">
-                    <label class="uk-text-small">@lang('Revisions')</label>
-                    <div class="uk-margin-small-top">
-                        <span class="uk-position-relative">
-                            <cp-revisions-info class="uk-badge uk-text-large" rid="{singleton._id}"></cp-revisions-info>
-                            <a class="uk-position-cover" href="@route('/singletons/revisions/'.$singleton['name'])/{singleton._id}"></a>
-                        </span>
-                    </div>
-                </div>
-
-                <div class="uk-margin" if="{data._mby}">
-                    <label class="uk-text-small">@lang('Last update by')</label>
-                    <div class="uk-margin-small-top">
-                        <cp-account account="{data._mby}"></cp-account>
-                    </div>
-                </div>
-
-                @trigger('singletons.form.aside')
 
             </div>
-
 
         </div>
 
@@ -247,13 +241,13 @@
                     return;
                 }
 
-                App.request('/singletons/update_data/'+this.singleton.name, {data:this.data}).then(function(res) {
+                App.request('/singletons/update_data/'+this.singleton.name, {data:this.data}).then(function(resp) {
 
-                    if (res) {
+                    if (resp) {
 
                         App.ui.notify("Saving successful", "success");
 
-                        $this.data = res.data;
+                        $this.data = resp.data;
 
                         $this.fields.forEach(function(field){
 
@@ -271,9 +265,6 @@
                     } else {
                         App.ui.notify("Saving failed.", "danger");
                     }
-
-                }, function(res) {
-                    App.ui.notify(res && (res.message || res.error) ? (res.message || res.error) : "Saving failed.", "danger");
                 });
             }
 

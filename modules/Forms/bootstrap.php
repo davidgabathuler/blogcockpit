@@ -255,7 +255,7 @@ $this->module('forms')->extend([
             return false;
         }
 
-        $this->app->trigger('forms.submit.before', [$form, &$data, $frm, &$options]);
+        $this->app->trigger('forms.submit.before', [$form, &$data, $frm]);
 
         if (isset($frm['email_forward']) && $frm['email_forward']) {
 
@@ -277,7 +277,7 @@ $this->module('forms')->extend([
                 // There is an email template available
                 if ($template = $this->app->path("#config:forms/emails/{$form}.php")) {
 
-                    $body = $this->app->renderer->file($template, ['data' => $data, 'frm' => $frm], false);
+                    $body = $this->app->renderer->file($template, $data, false);
 
                 // Prepare template manually
                 } else {
@@ -294,7 +294,7 @@ $this->module('forms')->extend([
 
                 $formname = isset($frm['label']) && trim($frm['label']) ? $frm['label'] : $form;
 
-                $this->app->mailer->mail($frm['email_forward'], $options['subject'] ?? "New form data for: {$formname}", $body, $options);
+                $this->app->mailer->mail($frm['email_forward'], $this->param("__mailsubject", "New form data for: {$formname}"), $body, $options);
             }
         }
 

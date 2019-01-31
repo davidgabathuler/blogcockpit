@@ -159,7 +159,7 @@ riot.tag2('cp-assets', '<div ref="list" show="{mode==\'list\'}"> <div ref="uploa
                         $this.refs.uploadprogress.classList.add('uk-hidden');
 
                         if (response && response.failed && response.failed.length) {
-                            App.ui.notify("File(s) failed to upload.", "danger");
+                            App.ui.notify("File(s) failed to uploaded.", "danger");
                         }
 
                         if (response && Array.isArray(response.assets) && response.assets.length) {
@@ -439,7 +439,7 @@ riot.tag2('cp-preloader', '<div> <div></div> <div></div> <div></div> <div></div>
 riot.tag2('cp-preloader-fullscreen', '<div class="uk-text-center"> <cp-preloader></cp-preloader> <div class="uk-margin-top uk-text-large uk-text-bold" if="{opts.message}"> {opts.message} </div> </div>', 'cp-preloader-fullscreen { position: fixed; display: flex; top: 0; bottom: 0; left: 0; right: 0; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.5); z-index: 1000000000000000; } cp-preloader-fullscreen cp-preloader,[data-is="cp-preloader-fullscreen"] cp-preloader{ display: inline-block; }', '', function(opts) {
 });
 
-riot.tag2('cp-diff', '<div class="uk-overflow-container"> <div ref="canvas"></div> </div>', 'cp-diff pre,[data-is="cp-diff"] pre{ background:none; margin:0; width overflow: auto; word-wrap: normal; white-space: pre; }', '', function(opts) {
+riot.tag2('cp-diff', '<div class="uk-overflow-container"> <pre><code ref="canvas"></code></pre> </div>', 'cp-diff pre,[data-is="cp-diff"] pre{ background:none; margin:0; width overflow: auto; word-wrap: normal; white-space: pre; }', '', function(opts) {
 
         var $this = this;
 
@@ -448,36 +448,15 @@ riot.tag2('cp-diff', '<div class="uk-overflow-container"> <div ref="canvas"></di
         });
 
         this.on('update', function() {
-            this.refs.canvas.innerHTML = '';
             this.diff(opts.oldtxt, opts.newtxt)
         });
 
         this.diff = function(oldtxt, newtxt) {
 
-            if (['string', 'number', 'boolean'].indexOf(typeof(oldtxt)) !== -1) {
-                this.refs.canvas.innerHTML = '<pre><code>'+JSON.stringify(oldtxt)+'</code></pre>';
-            } else {
-                App.assets.require([
+            if (typeof(oldtxt) !== 'string') oldtxt = JSON.stringify(oldtxt, null, 2);
+            if (typeof(newtxt) !== 'string') newtxt = JSON.stringify(newtxt, null, 2);
 
-                    '/assets/lib/jsoneditor/jsoneditor.min.css',
-                    '/assets/lib/jsoneditor/jsoneditor.min.js'
-
-                ], function() {
-
-                    editor = new JSONEditor(this.refs.canvas, {
-                        modes: ['tree'],
-                        mode: 'tree',
-                        navigationBar: false,
-                        onEditable: function() {
-                            return false;
-                        }
-                    });
-
-                    editor.set(oldtxt);
-
-                }.bind(this));
-            }
-
+            this.refs.canvas.textContent = oldtxt;
         }.bind(this)
 
 });
@@ -698,7 +677,7 @@ riot.tag2('cp-finder', '<div show="{App.Utils.count(data)}"> <div class="uk-clea
                             $this.refs.uploadprogress.classList.add('uk-hidden');
 
                             if (response && response.failed && response.failed.length) {
-                                App.ui.notify("File(s) failed to upload.", "danger");
+                                App.ui.notify("File(s) failed to uploaded.", "danger");
                             }
 
                             if (!response) {
@@ -1613,7 +1592,7 @@ riot.tag2('field-asset', '<div ref="uploadprogress" class="uk-margin uk-hidden">
                         $this.refs.uploadprogress.classList.add('uk-hidden');
 
                         if (response && response.failed && response.failed.length) {
-                            App.ui.notify("File(s) failed to upload.", "danger");
+                            App.ui.notify("File(s) failed to uploaded.", "danger");
                         }
 
                         if (response && Array.isArray(response.assets) && response.assets.length) {
@@ -1892,7 +1871,7 @@ riot.tag2('field-file', '<div class="uk-panel uk-panel-box uk-panel-card "> <div
                         $this.refs.uploadprogress.classList.add('uk-hidden');
 
                         if (response && response.failed && response.failed.length) {
-                            App.ui.notify("File(s) failed to upload.", "danger");
+                            App.ui.notify("File(s) failed to uploaded.", "danger");
                         }
 
                         if (response && Array.isArray(response.assets) && response.assets.length) {
@@ -2006,7 +1985,7 @@ riot.tag2('field-gallery', '<div ref="uploadprogress" class="uk-margin uk-hidden
                     complete: function(response) {
 
                         if (response && response.failed && response.failed.length) {
-                            App.ui.notify("File(s) failed to upload.", "danger");
+                            App.ui.notify("File(s) failed to uploaded.", "danger");
                         }
 
                         if (response && Array.isArray(response.assets) && response.assets.length) {
@@ -2149,7 +2128,7 @@ riot.tag2('field-gallery', '<div ref="uploadprogress" class="uk-margin uk-hidden
 
 riot.tag2('field-html', '<textarea ref="input" class="uk-visibility-hidden" hidden></textarea>', '', '', function(opts) {
 
-        var $this = this, editor, evtSrc;
+        var $this = this, editor;
 
         this.value = '';
 
@@ -2161,12 +2140,12 @@ riot.tag2('field-html', '<textarea ref="input" class="uk-visibility-hidden" hidd
 
                 this.value = value;
 
-                if (editor && !evtSrc) {
+                if (editor && this._field != field) {
                     editor.editor.setValue(value || '', true);
                 }
             }
 
-            evtSrc = false;
+            this._field = field;
 
         }.bind(this);
 
@@ -2184,7 +2163,6 @@ riot.tag2('field-html', '<textarea ref="input" class="uk-visibility-hidden" hidd
                     editor = UIkit.htmleditor(this.refs.input, opts);
 
                     editor.editor.on('change', function() {
-                        evtSrc = true;
                         $this.$setValue(editor.editor.getValue());
                     });
 
@@ -2217,12 +2195,12 @@ riot.tag2('field-html', '<textarea ref="input" class="uk-visibility-hidden" hidd
 
                             if (Array.isArray(assets) && assets.length) {
 
-                                var asset = assets[0], isImage = asset.mime.match(/^image\//);
+                                var asset = assets[0];
 
                                 if (editor.getCursorMode() == 'markdown') {
-                                    editor['replaceSelection'](isImage ? '!['+asset.title+']('+ASSETS_URL+asset.path+')' : '['+asset.title+']('+ASSETS_URL+asset.path+')');
+                                    editor['replaceSelection']('['+asset.title+']('+ASSETS_URL+asset.path+')');
                                 } else {
-                                    editor['replaceSelection'](isImage ? '<img src="'+ASSETS_URL+asset.path+'" alt="'+asset.title+'">' : '<a href="'+ASSETS_URL+asset.path+'">'+asset.title+'</a>');
+                                    editor['replaceSelection']('<a src="'+ASSETS_URL+asset.path+'">'+asset.title+'</a>');
                                 }
                             }
                         });
@@ -2286,7 +2264,7 @@ riot.tag2('field-image', '<div ref="uploadprogress" class="uk-margin uk-hidden">
                         $this.refs.uploadprogress.classList.add('uk-hidden');
 
                         if (response && response.failed && response.failed.length) {
-                            App.ui.notify("File(s) failed to upload.", "danger");
+                            App.ui.notify("File(s) failed to uploaded.", "danger");
                         }
 
                         if (response && Array.isArray(response.assets) && response.assets.length) {
@@ -2894,7 +2872,7 @@ riot.tag2('field-location', '<div class="uk-alert" if="{!apiready}"> Loading map
 riot.tag2('field-markdown', '<field-html ref="input" markdown="true" bind="{opts.bind}" height="{opts.height}"></field-html>', '', '', function(opts) {
 });
 
-riot.tag2('field-multipleselect', '<div class="{options.length > 10 ? \'uk-scrollable-box\':\'\'}"> <div class="uk-margin-small-top" each="{option in options}"> <a data-value="{option.value}" class="{parent.selected.indexOf(option.value)!==-1 ? \'uk-text-primary\':\'uk-text-muted\'}" onclick="{parent.toggle}" title="{option.label}"> <i class="uk-icon-{parent.selected.indexOf(option.value)!==-1 ? \'circle\':\'circle-o\'} uk-margin-small-right"></i> {option.label} </a> </div> </div> <span class="uk-text-small uk-text-muted" if="{options.length > 10}">{selected.length} {App.i18n.get(\'selected\')}</span>', '', '', function(opts) {
+riot.tag2('field-multipleselect', '<div class="{options.length > 10 ? \'uk-scrollable-box\':\'\'}"> <div class="uk-margin-small-top" each="{option in options}"> <a data-value="{option}" class="{parent.selected.indexOf(option)!==-1 ? \'uk-text-primary\':\'uk-text-muted\'}" onclick="{parent.toggle}" title="{option}"> <i class="uk-icon-{parent.selected.indexOf(option)!==-1 ? \'circle\':\'circle-o\'} uk-margin-small-right"></i> {option} </a> </div> </div> <span class="uk-text-small uk-text-muted" if="{options.length > 10}">{selected.length} {App.i18n.get(\'selected\')}</span>', '', '', function(opts) {
 
         var $this = this;
 
@@ -2907,29 +2885,17 @@ riot.tag2('field-multipleselect', '<div class="{options.length > 10 ? \'uk-scrol
 
         this.on('update', function() {
 
-            this.options = [];
+            this.options = opts.options || [];
 
-            if (typeof(opts.options) === 'string' || Array.isArray(opts.options)) {
+            if (typeof(this.options) === 'string') {
 
-                this.options = (typeof(opts.options) === 'string' ? opts.options.split(',') : opts.options || []).map(function(option) {
+                var options = [];
 
-                    option = {
-                      value : (option.hasOwnProperty('value') ? option.value.toString().trim() : option.toString().trim()),
-                      label : (option.hasOwnProperty('label') ? option.label.toString().trim() : option.toString().trim())
-                    };
-
-                    return option;
+                this.options.split(',').forEach(function(option) {
+                    options.push(option.trim());
                 });
 
-            } else if(typeof(opts.options) === 'object') {
-
-                Object.keys(opts.options).forEach(function(key) {
-
-                    $this.options.push({
-                        value: key,
-                        label: opts.options[key]
-                    })
-                })
+                this.options = options;
             }
         });
 
@@ -2952,7 +2918,7 @@ riot.tag2('field-multipleselect', '<div class="{options.length > 10 ? \'uk-scrol
 
         this.toggle = function(e) {
 
-            var option = e.item.option.value,
+            var option = e.item.option,
                 index  = this.selected.indexOf(option);
 
             if (index == -1) {
@@ -3230,46 +3196,23 @@ riot.tag2('field-repeater', '<div class="uk-alert" show="{!items.length}"> {App.
 
 });
 
-riot.tag2('field-select', '<select ref="input" class="uk-width-1-1 {opts.cls}" bind="{opts.bind}"> <option value=""></option> <option each="{option,idx in options}" riot-value="{option.value}" selected="{parent.root.$value === option.value}">{option.label}</option> </select>', '', '', function(opts) {
-
-        var $this = this;
+riot.tag2('field-select', '<select ref="input" class="uk-width-1-1 {opts.cls}" bind="{opts.bind}"> <option value=""></option> <option each="{option,idx in options}" riot-value="{option}" selected="{parent.root.$value === option}">{option}</option> </select>', '', '', function(opts) {
 
         this.on('mount', function() {
-            this.refs.input.value = this.root.$value;
             this.update();
         });
 
         this.on('update', function() {
-
             if (opts.required) {
                 this.refs.input.setAttribute('required', 'required');
             }
 
-            this.options = [];
-
-            if (typeof(opts.options) === 'string' || Array.isArray(opts.options)) {
-
-                this.options = (typeof(opts.options) === 'string' ? opts.options.split(',') : opts.options || []).map(function(option) {
-
-                    option = {
-                      value : (option.hasOwnProperty('value') ? option.value.toString().trim() : option.toString().trim()),
-                      label : (option.hasOwnProperty('label') ? option.label.toString().trim() : option.toString().trim())
-                    };
-
-                    return option;
+            this.options = (typeof(opts.options) === 'string' ? opts.options.split(',') : opts.options || [])
+                .map(function(option) {
+                    return option.toString().trim();
                 });
 
-            } else if(typeof(opts.options) === 'object') {
-
-                Object.keys(opts.options).forEach(function(key) {
-
-                    $this.options.push({
-                        value: key,
-                        label: opts.options[key]
-                    })
-                })
-            }
-
+            this.refs.input.value = this.root.$value;
         });
 
 });

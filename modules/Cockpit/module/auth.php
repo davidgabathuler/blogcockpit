@@ -44,7 +44,7 @@ $this->module('cockpit')->extend([
 
         $user = $app->retrieve('cockpit.auth.user');
 
-        if (is_null($user) && !COCKPIT_API_REQUEST) {
+        if (is_null($user)) {
             $user = $app('session')->read('cockpit.app.auth', null);
         }
 

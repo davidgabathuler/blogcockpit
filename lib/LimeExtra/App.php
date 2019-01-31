@@ -68,9 +68,7 @@ class App extends \Lime\App {
             return $renderer;
         });
 
-        if ($this->retrieve('session.init', true)) {
-            $this('session')->init();
-        }
+        $this("session")->init();
     }
 
 

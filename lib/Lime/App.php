@@ -278,23 +278,26 @@ class App implements \ArrayAccess {
 
         $this->exit = true;
 
-        if ($status) {
-           $this->response->status = $status;
+        if (is_string($data) && $data) {
+           $this->response->body = $data;
         }
 
-        if ($data) {
-            $this->response->body = $data;
-        }
-
-        if (is_numeric($data) && isset(self::$statusCodes[$data])) {
+        if (is_numeric($data) && $data) {
 
             $this->response->status = $data;
 
-            if ($this->response->mime == 'json') {
-                $this->response->body = json_encode(["error" => self::$statusCodes[$data]]);
-            } else {
-                $this->response->body = self::$statusCodes[$data];
+            if (isset(self::$statusCodes[$data])) {
+
+                if ($this->response->mime == 'json') {
+                    $this->response->body = json_encode(["error" => self::$statusCodes[$data]]);
+                } else {
+                    $this->response->body = self::$statusCodes[$data];
+                }
             }
+        }
+
+        if ($status) {
+           $this->response->status = $status;
         }
 
         if ($data || $status) {
@@ -566,7 +569,7 @@ class App implements \ArrayAccess {
             $callback = $callback->bindTo($this, $this);
         }
 
-        $this->events[$event][] = ['fn' => $callback, 'prio' => $priority];
+        $this->events[$event][] = ["fn" => $callback, "prio" => $priority];
 
         return $this;
     }
@@ -589,16 +592,16 @@ class App implements \ArrayAccess {
 
         $queue = new \SplPriorityQueue();
 
-        foreach ($this->events[$event] as $index => $action){
-            $queue->insert($index, $action['prio']);
+        foreach($this->events[$event] as $index => $action){
+            $queue->insert($index, $action["prio"]);
         }
 
         $queue->top();
 
-        while ($queue->valid()){
+        while($queue->valid()){
             $index = $queue->current();
-            if (is_callable($this->events[$event][$index]['fn'])){
-                if (call_user_func_array($this->events[$event][$index]['fn'], $params) === false) {
+            if (is_callable($this->events[$event][$index]["fn"])){
+                if (call_user_func_array($this->events[$event][$index]["fn"], $params) === false) {
                     break; // stop Propagation
                 }
             }

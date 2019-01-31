@@ -370,7 +370,7 @@
                 } catch(e){}
             }
 
-            this.load(true);
+            this.load();
             this.update();
         }
 
@@ -445,7 +445,7 @@
 
         }
 
-        load(initial) {
+        load() {
 
             var options = { sort:this.sort };
 
@@ -461,18 +461,15 @@
 
             this.loading = true;
 
-            if (!initial) {
-                
-                window.history.pushState(
-                    null, null,
-                    App.route(['/collections/entries/', this.collection.name, '?q=', JSON.stringify({
-                        page: this.page || null,
-                        filter: this.filter || null,
-                        sort: this.sort || null,
-                        limit: this.limit
-                    })].join(''))
-                );
-            }
+            window.history.pushState(
+                null, null,
+                App.route(['/collections/entries/', this.collection.name, '?q=', JSON.stringify({
+                    page: this.page || null,
+                    filter: this.filter || null,
+                    sort: this.sort || null,
+                    limit: this.limit
+                })].join(''))
+            );
 
             return App.request('/collections/find', {collection:this.collection.name, options:options}).then(function(data){
 
