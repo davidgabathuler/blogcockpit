@@ -8,8 +8,8 @@
         { App.i18n.get('Failed loading collection') } {opts.link}
     </div>
 
-    <div class="uk-margin" if="{opts.link && !collection && !error}">
-        <cp-preloader class="uk-container-center"></cp-preloader>
+    <div class="uk-alert" if="{opts.link && !collection && !error}">
+        <i class="uk-icon-spinner uk-icon-spin"></i> { App.i18n.get('Loading field') }
     </div>
 
     <div if="{opts.link && collection}">
@@ -57,38 +57,30 @@
 
     <div class="uk-modal">
 
-        <div class="uk-modal-dialog uk-modal-dialog-large">
+        <div class="uk-modal-dialog uk-modal-dialog-large" if="{collection}">
             <a href="" class="uk-modal-close uk-close"></a>
+            <h3>{ collection.label || opts.link }</h3>
 
-            <h3>{ collection && (collection.label || opts.link) }</h3>
+            <div class="uk-margin">
 
-            <div class="uk-margin uk-flex uk-flex-middle" if="{collection}">
-
-                <div class="uk-form-icon uk-form uk-flex-item-1 uk-text-muted">
+                <div class="uk-form-icon uk-form uk-width-1-1 uk-text-muted">
 
                     <i class="uk-icon-search"></i>
                     <input class="uk-width-1-1 uk-form-large uk-form-blank" type="text" ref="txtfilter" placeholder="{ App.i18n.get('Filter items...') }" onchange="{ updatefilter }">
 
                 </div>
 
-                <div show="{selected.length}">
-                    <button type="button" class="uk-button uk-button-large uk-button-link" onclick="{linkItems}">
-                        <i class="uk-icon-link"></i> {selected.length} {App.i18n.get('Entries')}
-                    </button>
-                </div>
-
             </div>
 
-            <div class="uk-overflow-container" if="{collection}">
+            <div class="uk-overflow-container">
 
-                <div class="uk-text-xlarge uk-text-center uk-text-muted uk-margin-large-bottom" if="{ !entries.length && filter && !loading }">
+                <div class="uk-alert" if="{ !entries.length && filter && !loading }">
                     { App.i18n.get('No entries found') }.
                 </div>
 
-                <table class="uk-table uk-table-tabbed uk-table-striped" if="{ entries.length }">
+                <table class="uk-table uk-table-striped uk-margin-top" if="{ entries.length }">
                     <thead>
                         <tr>
-                            <th show="{opts.multiple}"></th>
                             <th class="uk-text-small" each="{field,idx in fields}">
                                 <a class="uk-link-muted { parent.sort[field.name] ? 'uk-text-primary':'' }" onclick="{ parent.updatesort }" data-sort="{ field.name }">
 
@@ -102,7 +94,6 @@
                     </thead>
                     <tbody>
                         <tr each="{entry,idx in entries}">
-                            <td show="{parent.opts.multiple}"><input class="uk-checkbox" type="checkbox" onclick="{parent.toggleSelected}"></td>
                             <td class="uk-text-truncate" each="{field,idy in parent.fields}" if="{ field.name != '_modified' }">
                                 <raw content="{ App.Utils.renderValue(field.type, parent.entry[field.name]) }"></raw>
                             </td>
@@ -114,8 +105,8 @@
                     </tbody>
                 </table>
 
-                <div class="uk-margin-large-bottom" if="{ loading }">
-                    <cp-preloader class="uk-container-center"></cp-preloader>
+                <div class="uk-alert" if="{ loading }">
+                    <i class="uk-icon-spinner uk-icon-spin"></i> {App.i18n.get('Loading...')}.
                 </div>
 
                 <div class="uk margin" if="{ loadmore && !loading }">
@@ -130,8 +121,6 @@
 
 
     <script>
-
-    this.mixin(RiotBindMixin);
 
     var $this = this, modal, collections, _init = function(){
 
@@ -154,8 +143,6 @@
     this.link = null;
     this.sort = {'_created': -1};
 
-    this.selected = [];
-
     this.$updateValue = function(value, field) {
 
         if (opts.multiple && !Array.isArray(value)) {
@@ -173,7 +160,7 @@
 
         if (!opts.link) return;
 
-        modal = UIkit.modal(App.$('.uk-modal', this.root), {modal:false});
+        modal = UIkit.modal(App.$('.uk-modal', this.root));
 
         App.request('/collections/_collections').then(function(data){
             collections = data;
@@ -201,37 +188,31 @@
 
     showDialog(){
 
-        this.selected = [];
-
         if (opts.multiple && opts.limit && this.link && this.link.length >= Number(opts.limit)) {
             App.ui.notify('Maximum amount of items reached');
             return;
         }
 
         modal.show();
-        modal.find(':checked').prop('checked', false);
-
-        if (!this.entries.length) this.load();
+        this.load();
     }
 
     linkItem(e) {
 
         var _entry = e.item.entry;
         var entry = {
-            _id: _entry._id,
-            link: this.collection.name,
+            _id: _entry._id, 
+            link: this.collection.name, 
             display: _entry[opts.display] || _entry[this.collection.fields[0].name] || 'n/a'
         };
 
         if (opts.multiple) {
 
-            if (!this.link || !Array.isArray(this.link)) {
+            if (!this.link) {
                 this.link = [];
             }
 
             this.link.push(entry);
-            this.link = _.uniqBy(this.link, '_id');
-
         } else {
             this.link = entry;
         }
@@ -240,38 +221,6 @@
             modal.hide();
         }, 50);
 
-        this.$setValue(this.link);
-    }
-
-    linkItems(e) {
-
-        e.preventDefault();
-
-        if (!opts.multiple || !this.selected.length) {
-            return;
-        }
-
-        if (!this.link || !Array.isArray(this.link)) {
-            this.link = [];
-        }
-
-        var entry;
-
-        this.selected.forEach(function(_entry) {
-            entry = {
-                _id: _entry._id,
-                link: $this.collection.name,
-                display: _entry[opts.display] || _entry[$this.collection.fields[0].name] || 'n/a'
-            };
-
-            $this.link.push(entry);
-        });
-
-        setTimeout(function(){
-            modal.hide();
-        }, 50);
-
-        this.link = _.uniqBy(this.link, '_id');
         this.$setValue(this.link);
     }
 
@@ -306,12 +255,12 @@
 
         this.loading = true;
 
-        return App.request('/collections/find', {collection:this.collection.name, options:options}).then(function(data){
+        return App.request('/collections/_find', {collection:this.collection.name, options: options}).then(function(data){
 
-            this.entries = this.entries.concat(data.entries);
+            this.entries = this.entries.concat(data);
 
             this.ready    = true;
-            this.loadmore = data.entries.length && data.entries.length == limit;
+            this.loadmore = data.length && data.length == limit;
 
             this.loading = false;
 
@@ -324,13 +273,77 @@
 
         var load = this.filter ? true:false;
 
-        if (this.refs.txtfilter.value == this.filter) {
-            return;
+        this.filter = null;
+
+        if (this.refs.txtfilter.value) {
+
+            var filter       = this.refs.txtfilter.value,
+                criterias    = [],
+                allowedtypes = ['text','longtext','boolean','select','html','wysiwyg','markdown','code'],
+                criteria;
+
+            if (App.Utils.str2json('{'+filter+'}')) {
+
+                filter = App.Utils.str2json('{'+filter+'}');
+
+                var key, field;
+
+                for (key in filter) {
+
+                    field = this.fieldsidx[key] || {};
+
+                    if (allowedtypes.indexOf(field.type) !== -1) {
+
+                        criteria = {};
+                        criteria[key] = field.type == 'boolean' ? filter[key]: {'$regex':filter[key]};
+                        criterias.push(criteria);
+                    }
+                }
+
+                if (criterias.length) {
+                    this.filter = {'$and':criterias};
+                }
+
+            } else {
+
+                this.collection.fields.forEach(function(field){
+
+                   if (field.type != 'boolean' && allowedtypes.indexOf(field.type) !== -1) {
+                       criteria = {};
+                       criteria[field.name] = {'$regex':filter};
+                       criterias.push(criteria);
+                   }
+
+                });
+
+                if (criterias.length) {
+                    this.filter = {'$or':criterias};
+                }
+            }
+
         }
 
-        this.filter = this.refs.txtfilter.value || null;
-
         if (this.filter || load) {
+
+            if (opts.filter) {
+
+                Object.keys(opts.filter).forEach(function(k) {
+                    switch(k) {
+                        case '$and':
+                        case '$or':
+                            if ($this.filter[k]) {
+                                this.filter[k] = this.filter[k].concat(opts.filter[k]);
+                            } else {
+                                $this.filter[k] = opts.filter[k];
+                            }
+                            break;
+                        default:
+                            $this.filter[k] = opts.filter[k];
+                    }
+                });
+
+                this.filter = opts.filter;
+            }
 
             this.entries = [];
             this.loading = true;
@@ -382,22 +395,6 @@
                 $this.root.style.height = '';
             }, 30)
         }, 10);
-    }
-
-    toggleSelected(e) {
-
-        var _entry = e.item.entry;
-
-        if (e.target.checked) {
-            this.selected.push(_entry);
-        } else {
-
-            var idx = this.selected.indexOf(_entry);
-
-            if (idx > -1) {
-                this.selected.splice(idx, 1);
-            }
-        }
     }
 
 

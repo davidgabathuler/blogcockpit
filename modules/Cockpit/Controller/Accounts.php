@@ -10,7 +10,7 @@ class Accounts extends \Cockpit\AuthController {
             return $this->helper('admin')->denyRequest();
         }
 
-        $current  = $this->user['_id'];
+        $current  = $this->user["_id"];
         $groups   = $this->module('cockpit')->getGroups();
 
         return $this->render('cockpit:views/accounts/index.php', compact('current', 'groups'));
@@ -20,14 +20,10 @@ class Accounts extends \Cockpit\AuthController {
     public function account($uid=null) {
 
         if (!$uid) {
-            $uid = $this->user['_id'];
+            $uid = $this->user["_id"];
         }
 
-        if (!$this->module('cockpit')->hasaccess('cockpit', 'accounts') && $uid != $this->user['_id']) {
-            return $this->helper('admin')->denyRequest();
-        }
-
-        $account = $this->app->storage->findOne('cockpit/accounts', ['_id' => $uid]);
+        $account = $this->app->storage->findOne("cockpit/accounts", ["_id" => $uid]);
 
         if (!$account) {
             return false;
@@ -44,55 +40,42 @@ class Accounts extends \Cockpit\AuthController {
 
     public function create() {
 
-        if (!$this->module('cockpit')->hasaccess('cockpit', 'accounts')) {
-            return $this->helper('admin')->denyRequest();
-        }
-
         $uid       = null;
-        $account   = ['user'=>'', 'email'=>'', 'active'=>true, 'group'=>'admin', 'i18n'=>$this->app->helper('i18n')->locale];
+        $account   = ["user"=>"", "email"=>"", "active"=>true, "group"=>"admin", "i18n"=>$this->app->helper("i18n")->locale];
 
-        $fields    = $this->app->retrieve('config/account/fields', null);
         $languages = $this->getLanguages();
         $groups    = $this->module('cockpit')->getGroups();
 
-        return $this->render('cockpit:views/accounts/account.php', compact('account', 'uid', 'languages', 'groups', 'fields'));
+        return $this->render('cockpit:views/accounts/account.php', compact('account', 'uid', 'languages', 'groups'));
     }
 
     public function save() {
 
-        if ($data = $this->param('account', false)) {
+        if ($data = $this->param("account", false)) {
 
-            // check rights
-            if (!$this->module('cockpit')->hasaccess('cockpit', 'accounts')) {
-
-                if (!isset($data['_id']) || $data['_id'] != $this->user['_id']) {
-                    return $this->helper('admin')->denyRequest();
-                }
-            }
-
-            $data['_modified'] = time();
+            $data["_modified"] = time();
 
             if (!isset($data['_id'])) {
-                $data['_created'] = $data['_modified'];
+                $data["_created"] = $data["_modified"];
             }
 
-            if (isset($data['password'])) {
+            if (isset($data["password"])) {
 
-                if (strlen($data['password'])){
-                    $data['password'] = $this->app->hash($data['password']);
+                if (strlen($data["password"])){
+                    $data["password"] = $this->app->hash($data["password"]);
                 } else {
-                    unset($data['password']);
+                    unset($data["password"]);
                 }
             }
 
-            $this->app->storage->save('cockpit/accounts', $data);
+            $this->app->storage->save("cockpit/accounts", $data);
 
-            if (isset($data['password'])) {
-                unset($data['password']);
+            if (isset($data["password"])) {
+                unset($data["password"]);
             }
 
-            if ($data['_id'] == $this->user['_id']) {
-                $this->module('cockpit')->setUser($data);
+            if ($data["_id"] == $this->user["_id"]) {
+                $this->module("cockpit")->setUser($data);
             }
 
             return json_encode($data);
@@ -104,12 +87,12 @@ class Accounts extends \Cockpit\AuthController {
 
     public function remove() {
 
-        if ($data = $this->param('account', false)) {
+        if ($data = $this->param("account", false)) {
 
             // user can't delete himself
-            if ($data['_id'] != $this->user['_id']) {
+            if ($data["_id"] != $this->user["_id"]) {
 
-                $this->app->storage->remove('cockpit/accounts', ['_id' => $data['_id']]);
+                $this->app->storage->remove("cockpit/accounts", ["_id" => $data["_id"]]);
 
                 return '{"success":true}';
             }
@@ -138,8 +121,8 @@ class Accounts extends \Cockpit\AuthController {
             }
         }
 
-        $accounts = $this->storage->find('cockpit/accounts', $options)->toArray();
-        $count    = (!isset($options['skip']) && !isset($options['limit'])) ? count($accounts) : $this->storage->count('cockpit/accounts', isset($options['filter']) ? $options['filter'] : []);
+        $accounts = $this->storage->find("cockpit/accounts", $options)->toArray();
+        $count    = (!isset($options['skip']) && !isset($options['limit'])) ? count($accounts) : $this->storage->count("cockpit/accounts", isset($options['filter']) ? $options['filter'] : []);
         $pages    = isset($options['limit']) ? ceil($count / $options['limit']) : 1;
         $page     = 1;
 
@@ -148,12 +131,7 @@ class Accounts extends \Cockpit\AuthController {
         }
 
         foreach ($accounts as &$account) {
-
-            $account['md5email'] = md5(@$account['email']);
-
-            if (isset($account["password"])) {
-                unset($account["password"]);
-            }
+            $account["md5email"] = md5(@$account["email"]);
         }
 
         return compact('accounts', 'count', 'pages', 'page');
@@ -167,7 +145,7 @@ class Accounts extends \Cockpit\AuthController {
 
             $lang     = include($file->getRealPath());
             $i18n     = $file->getBasename('.php');
-            $language = $lang['@meta']['language'] ?? $i18n;
+            $language = isset($lang['@meta']['language']) ? $lang['@meta']['language'] : $i18n;
 
             $languages[] = ['i18n' => $i18n, 'language'=> $language];
         }

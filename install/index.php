@@ -1,7 +1,5 @@
 <?php
 
-define('COCKPIT_INSTALL', true);
-
 $sqlitesupport = false;
 
 // check whether sqlite is supported

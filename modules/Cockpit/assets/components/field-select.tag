@@ -18,7 +18,7 @@
 
             this.options = (typeof(opts.options) === 'string' ? opts.options.split(',') : opts.options || [])
                 .map(function(option) {
-                    return option.toString().trim();
+                    return option.trim();
                 });
 
             this.refs.input.value = this.root.$value;

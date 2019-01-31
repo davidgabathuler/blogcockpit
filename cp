@@ -5,34 +5,25 @@ if (PHP_SAPI !== 'cli') {
     exit('Script needs to be run from Command Line Interface (cli)');
 }
 
-define('COCKPIT_CLI', true);
+if (!defined('COCKPIT_CLI')) define('COCKPIT_CLI', true);
 
-include_once(__DIR__.'/bootstrap.php');
-
-$_REQUEST = CLI::opts(); // make option available via $app->param()
-$app = cockpit();
+include_once(__DIR__."/bootstrap.php");
 
 if (isset($argv[1])) {
 
     $cmd = str_replace('../', '', $argv[1]);
-    $script = $app->path("#config:cli/{$cmd}.php");
 
-    if (!$script) {
-        $script = $app->path("#cli:{$cmd}.php");
-    }
-
-    switch ($cmd) {
+    switch($cmd) {
 
         case 'test':
-            CLI::writeln('Yepp!', true);
+            CLI::writeln("Yepp!", true);
             break;
-
         default:
 
-            if ($script) {
+            if ($script = cockpit()->path("#config:cli/{$cmd}.php")) {
                 include($script);
             } else {
-                CLI::writeln("Error: Command \"{$cmd}\" not found!", false);
+                CLI::writeln("Command - {$cmd} - not found!", false);
             }
     }
 }

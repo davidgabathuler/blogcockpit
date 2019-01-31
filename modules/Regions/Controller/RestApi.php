@@ -16,8 +16,8 @@ class RestApi extends \LimeExtra\Controller {
             }
         }
 
-        $params  = $this->param('params', []);
-        $content = $this->module('regions')->render($name, $params);
+        $params  = $this->param("params", []);
+        $content = $this->module("regions")->render($name, $params);
 
         return is_null($content) ? false : $content;
     }
@@ -28,7 +28,7 @@ class RestApi extends \LimeExtra\Controller {
             return false;
         }
 
-        if ($user = $this->module('cockpit')->getUser()) {
+        if ($this->module('cockpit')->getUser()) {
 
             if (!$this->module('regions')->hasaccess($name, 'data') && !$this->module('regions')->hasaccess($name, 'form')) {
                 return $this->stop('{"error": "Unauthorized"}', 401);
@@ -41,19 +41,7 @@ class RestApi extends \LimeExtra\Controller {
             return false;
         }
 
-        // workaround for now, may change later!
-        if ($this->param('populate') && isset($region['data']) && function_exists('cockpit_populate_collection')) {
-
-            $fieldsFilter = [];
-
-            if ($user) $fieldsFilter['user'] = $user;
-
-            $_items = [$region['data']];
-            $_items = cockpit_populate_collection($_items, intval($this->param('populate')), 0, $fieldsFilter);
-            $region['data'] = $_items[0];
-        }
-
-        return $region['data'] ?? [];
+        return isset($region['data']) ? $region['data'] : [];
     }
 
     public function listRegions($extended = false) {

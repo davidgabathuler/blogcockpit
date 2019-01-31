@@ -6,7 +6,7 @@
         <li><a href="@route('/collections')">@lang('Collections')</a></li>
         <li data-uk-dropdown="mode:'hover, delay:300'">
 
-            <a href="@route('/collections/entries/'.$collection['name'])"><i class="uk-icon-bars"></i> {{ htmlspecialchars(@$collection['label'] ? $collection['label']:$collection['name']) }}</a>
+            <a href="@route('/collections/entries/'.$collection['name'])"><i class="uk-icon-bars"></i> {{ @$collection['label'] ? $collection['label']:$collection['name'] }}</a>
 
             <div class="uk-dropdown">
                 <ul class="uk-nav uk-nav-dropdown">
@@ -96,16 +96,16 @@
                     </td>
                     <td>
                         <div class="uk-text-center">
-                            <input class="uk-checkbox" type="checkbox" onchange="{ setFilter(field.name) }" />
+                            <input type="checkbox" onchange="{ setFilter(field.name) }" />
                         </div>
                     </td>
                 </tr>
             </tbody>
         </table>
 
-        <div class="uk-margin-large-top">
+        <div class="uk-margin">
             <button class="uk-button uk-button-large uk-button-primary" onclick="{ doImport }">@lang('Import')</button>
-            <a class="uk-button uk-button-large uk-button-link" onclick="{restart}">@lang('Cancel')</a>
+            <a class="uk-margin-left" onclick="{restart}">@lang('Cancel')</a>
         </div>
 
     </div>
@@ -282,11 +282,7 @@
             });
 
             if (required.length) {
-
-                return App.ui.notify([
-                    App.i18n.get('Required fields are not mapped:'),
-                    '<div class="uk-margin-small-top">'+required+'</div>'
-                ].join(''));
+                return App.ui.notify("Required fields are not mapped:<div class='uk-margin-small-top'>"+required+"</div>");
             }
 
             var cnt    = 20,

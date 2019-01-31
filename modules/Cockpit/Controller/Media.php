@@ -8,7 +8,7 @@ class Media extends \Cockpit\AuthController {
 
     public function api() {
 
-        $cmd       = $this->param('cmd', false);
+        $cmd       = $this->param("cmd", false);
         $mediapath = $this->module('cockpit')->getGroupVar('finder.path', '');
 
         $this->root = rtrim($this->app->path("site:{$mediapath}"), '/');
@@ -25,7 +25,7 @@ class Media extends \Cockpit\AuthController {
 
     protected function ls() {
 
-        $data     = ['folders'=>[], 'files'=>[]];
+        $data     = array("folders"=>array(), "files"=>array());
         $toignore = [
             '.svn', '_svn', 'cvs', '_darcs', '.arch-params', '.monotone', '.bzr', '.git', '.hg',
             '.ds_store', '.thumb', '.idea'
@@ -35,10 +35,10 @@ class Media extends \Cockpit\AuthController {
         $sitefolder = $this->app->path('site:');
         $isSuperAdmin = $this->module('cockpit')->isSuperAdmin();
 
-        if ($path = $this->_getPathParameter()){
+        if ($path = $this->param("path", false)){
 
             $dir = $this->root.'/'.trim($path, '/');
-            $data['path'] = $dir;
+            $data["path"] = $dir;
 
             if (file_exists($dir)){
 
@@ -53,20 +53,20 @@ class Media extends \Cockpit\AuthController {
 
                     $isDir = $file->isDir();
 
-                    $data[$file->isDir() ? 'folders':'files'][] = [
-                        'is_file' => !$isDir,
-                        'is_dir' => $isDir,
-                        'is_writable' => is_writable($file->getPathname()),
-                        'name' => $filename,
-                        'path' => trim($path.'/'.$file->getFilename(), '/'),
-                        'rel_site_path' => trim(str_replace($sitefolder, '', $file->getPathname()), '/'),
-                        'url'  => $this->app->pathToUrl($file->getPathname()),
-                        'size' => $isDir ? '' : $this->app->helper('utils')->formatSize($file->getSize()),
-                        'filesize' => $isDir ? '' : $file->getSize(),
-                        'ext'  => $isDir ? '' : strtolower($file->getExtension()),
-                        'lastmodified' => $file->isDir() ? '' : date('d.m.y H:i', $file->getMTime()),
-                        'modified' => $file->isDir() ? '' : $file->getMTime(),
-                    ];
+                    $data[$file->isDir() ? "folders":"files"][] = array(
+                        "is_file" => !$isDir,
+                        "is_dir" => $isDir,
+                        "is_writable" => is_writable($file->getPathname()),
+                        "name" => $filename,
+                        "path" => trim($path.'/'.$file->getFilename(), '/'),
+                        "rel_site_path" => trim(str_replace($sitefolder, '', $file->getPathname()), '/'),
+                        "url"  => $this->app->pathToUrl($file->getPathname()),
+                        "size" => $isDir ? "" : $this->app->helper("utils")->formatSize($file->getSize()),
+                        "filesize" => $isDir ? "" : $file->getSize(),
+                        "ext"  => $isDir ? "" : strtolower($file->getExtension()),
+                        "lastmodified" => $file->isDir() ? "" : date("d.m.y H:i", $file->getMTime()),
+                        "modified" => $file->isDir() ? "" : $file->getMTime(),
+                    );
                 }
             }
         }
@@ -76,11 +76,8 @@ class Media extends \Cockpit\AuthController {
 
     protected function upload() {
 
-        $path       = $this->_getPathParameter();
-
-        if (!$path) return false;
-
-        $files      = $_FILES['files'] ?? [];
+        $files      = isset($_FILES['files']) ? $_FILES['files'] : [];
+        $path       = $this->param('path', false);
         $targetpath = $this->root.'/'.trim($path, '/');
         $uploaded   = [];
         $failed     = [];
@@ -90,13 +87,12 @@ class Media extends \Cockpit\AuthController {
         $_failed    = [];
 
         if (isset($files['name']) && $path && file_exists($targetpath)) {
-
             for ($i = 0; $i < count($files['name']); $i++) {
 
                 // clean filename
                 $clean = preg_replace('/[^a-zA-Z0-9-_\.]/','', str_replace(' ', '-', $files['name'][$i]));
 
-                if (!$files['error'][$i] && $this->_isFileTypeAllowed($clean) && move_uploaded_file($files['tmp_name'][$i], $targetpath.'/'.$clean)) {
+                if (!$files['error'][$i] && move_uploaded_file($files['tmp_name'][$i], $targetpath.'/'.$clean)) {
                     $uploaded[]  = $files['name'][$i];
                     $_uploaded[] = $targetpath.'/'.$clean;
                 } else {
@@ -113,10 +109,7 @@ class Media extends \Cockpit\AuthController {
 
     protected function createfolder() {
 
-        $path = $this->_getPathParameter();
-
-        if (!$path) return false;
-
+        $path = $this->param('path', false);
         $name = $this->param('name', false);
         $ret  = false;
 
@@ -124,29 +117,26 @@ class Media extends \Cockpit\AuthController {
             $ret = mkdir($this->root.'/'.trim($path, '/').'/'.$name);
         }
 
-        return json_encode(['success' => $ret]);
+        return json_encode(array("success"=>$ret));
     }
 
     protected function createfile() {
 
-        $path = $this->_getPathParameter();
-
-        if (!$path) return false;
-
+        $path = $this->param('path', false);
         $name = $this->param('name', false);
         $ret  = false;
 
-        if ($name && $this->_isFileTypeAllowed($name) && $path) {
-            $ret = @file_put_contents($this->root.'/'.trim($path, '/').'/'.$name, '');
+        if ($name && $path) {
+            $ret = @file_put_contents($this->root.'/'.trim($path, '/').'/'.$name, "");
         }
 
-        return json_encode(['success' => $ret]);
+        return json_encode(array("success"=>$ret));
     }
 
 
     protected function removefiles() {
 
-        $paths     = (array)$this->param('paths', []);
+        $paths     = (array)$this->param('paths', array());
         $deletions = [];
 
         foreach ($paths as $path) {
@@ -166,7 +156,7 @@ class Media extends \Cockpit\AuthController {
 
         $this->app->trigger('cockpit.media.removefiles', [$deletions]);
 
-        return json_encode(["success"=>true]);
+        return json_encode(array("success"=>true));
     }
 
     protected function _rrmdir($dir) {
@@ -186,13 +176,10 @@ class Media extends \Cockpit\AuthController {
 
     protected function rename() {
 
-        $path = $this->_getPathParameter();
-
-        if (!$path) return false;
-
+        $path = $this->param('path', false);
         $name = $this->param('name', false);
 
-        if ($path && $name && $this->_isFileTypeAllowed($name)) {
+        if ($path && $name) {
             $source = $this->root.'/'.trim($path, '/');
             $target = dirname($source).'/'.$name;
 
@@ -200,15 +187,12 @@ class Media extends \Cockpit\AuthController {
             $this->app->trigger('cockpit.media.rename', [$source, $target]);
         }
 
-        return json_encode(["success"=>true]);
+        return json_encode(array("success"=>true));
     }
 
     protected function readfile() {
 
-        $path = $this->_getPathParameter();
-
-        if (!$path) return false;
-
+        $path = $this->param('path', false);
         $file = $this->root.'/'.trim($path, '/');
 
         if ($path && file_exists($file)) {
@@ -220,10 +204,7 @@ class Media extends \Cockpit\AuthController {
 
     protected function writefile() {
 
-        $path    = $this->_getPathParameter();
-
-        if (!$path) return false;
-
+        $path    = $this->param('path', false);
         $content = $this->param('content', false);
         $file    = $this->root.'/'.trim($path, '/');
         $ret     = false;
@@ -232,16 +213,14 @@ class Media extends \Cockpit\AuthController {
             $ret = file_put_contents($file, $content);
         }
 
-        return json_encode(['success' => $ret]);
+        return json_encode(array("success"=>$ret));
     }
 
     protected function unzip() {
 
-        $path    = $this->_getPathParameter();
-
-        if (!$path) return false;
-
         $return  = ['success' => false];
+
+        $path    = $this->param('path', false);
         $zip     = $this->param('zip', false);
 
         if ($path && $zip) {
@@ -266,10 +245,7 @@ class Media extends \Cockpit\AuthController {
 
     protected function download() {
 
-        $path = $this->_getPathParameter();
-
-        if (!$path) return false;
-
+        $path = $this->param('path', false);
         $file = $this->root.'/'.trim($path, '/');
 
         if (!$path && !file_exists($file)) {
@@ -297,10 +273,7 @@ class Media extends \Cockpit\AuthController {
 
     protected function downloadfolder() {
 
-        $path   = $this->_getPathParameter();
-
-        if (!$path) return false;
-
+        $path   = $this->param('path', false);
         $folder = $this->root.'/'.trim($path, '/');
 
         if (!$path && !file_exists($folder)) {
@@ -365,7 +338,7 @@ class Media extends \Cockpit\AuthController {
     public function savebookmarks() {
 
         if ($bookmarks = $this->param('bookmarks', false)) {
-            $this->memory->set('mediamanager.bookmarks.'.$this->user['_id'], $bookmarks);
+            $this->memory->set("mediamanager.bookmarks.".$this->user["_id"], $bookmarks);
         }
 
         return json_encode($bookmarks);
@@ -373,36 +346,7 @@ class Media extends \Cockpit\AuthController {
 
     public function loadbookmarks() {
 
-        return json_encode($this->app->memory->get('mediamanager.bookmarks.'.$this->user['_id'], ['folders'=>[], 'files'=>[]]));
-    }
-
-    protected function _getPathParameter() {
-
-        $path = $this->param('path', false);
-
-        if ($path) {
-
-            $path = trim($path);
-
-            if (strpos($path, '../') !== false) {
-                $path = false;
-            }
-        }
-
-        return $path;
-    }
-
-    protected function _isFileTypeAllowed($file) {
-
-        $allowed = trim($this->module('cockpit')->getGroupVar('finder.allowed_uploads', $this->app->retrieve('allowed_uploads', '*')));
-
-        if ($allowed == '*') {
-            return true;
-        }
-
-        $allowed = str_replace([' ', ','], ['', '|'], preg_quote(is_array($allowed) ? implode(',', $allowed) : $allowed));
-
-        return preg_match("/\.({$allowed})$/i", $file);
+        return json_encode($this->app->memory->get("mediamanager.bookmarks.".$this->user["_id"], ["folders"=>[], "files"=>[]]));
     }
 
 }

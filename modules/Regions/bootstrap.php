@@ -72,7 +72,7 @@ $this->module("regions")->extend([
             return false;
         }
 
-        $this->app->trigger('regions.save.after', [$region]);
+        $this->app->trigger('regions.save', [$region]);
         $this->app->trigger("regions.save.after.{$name}", [$region]);
 
         return $region;
@@ -91,7 +91,10 @@ $this->module("regions")->extend([
 
         if ($region = $this->region($name)) {
 
+            $region = $regions["_id"];
+
             $this->app->helper("fs")->delete("#storage:regions/{$name}.region.php");
+            $this->app->storage->dropregion("regions/{$region}");
 
             $this->app->trigger('regions.remove', [$region]);
             $this->app->trigger("regions.remove.{$name}", [$region]);
@@ -160,7 +163,7 @@ $this->module("regions")->extend([
 
         $renderer = $this->app->renderer;
 
-        $_fields  = $region['fields'] ?? [];
+        $_fields  = isset($region['fields']) ? $region['fields'] : [];
 
         $fields = array_merge(isset($region['data']) && is_array($region['data']) ? $region['data']:[] , $params);
 

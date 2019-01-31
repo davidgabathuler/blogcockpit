@@ -2,6 +2,8 @@
 
 namespace MongoHybrid;
 
+include_once(__DIR__.'/../MongoDB/functions.php');
+
 class Mongo {
 
     protected $client;
@@ -149,11 +151,9 @@ class Mongo {
 
         if (!$filter) $filter = [];
 
-        $filter = $this->_fixMongoIds($filter);
-
         return $this->getCollection($collection)->count($filter);
     }
-
+    
     protected function _fixMongoIds(&$data) {
 
         if (!is_array($data)) {
@@ -161,7 +161,7 @@ class Mongo {
         }
 
         foreach ($data as $k => $v) {
-
+            
             if (is_array($data[$k])) {
                 $data[$k] = $this->_fixMongoIds($data[$k]);
             }
@@ -169,21 +169,12 @@ class Mongo {
             if ($k === '_id') {
 
                 if (is_string($v)) {
+                    
                     $v = new \MongoDB\BSON\ObjectID($v);
-                }
 
-                if (is_array($v) && isset($v['$in'])) {
-
+                } elseif (is_array($v) && isset($v['$in'])) {
+                    
                     foreach ($v['$in'] as &$id) {
-                        if (is_string($id)) {
-                            $id = new \MongoDB\BSON\ObjectID($id);
-                        }
-                    }
-                }
-
-                if (is_array($v) && isset($v['$nin'])) {
-
-                    foreach ($v['$nin'] as &$id) {
                         if (is_string($id)) {
                             $id = new \MongoDB\BSON\ObjectID($id);
                         }

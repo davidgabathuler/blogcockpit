@@ -3,12 +3,22 @@
 // Helpers
 
 $this->helpers['revisions']  = 'Cockpit\\Helper\\Revisions';
-$this->helpers['updater']  = 'Cockpit\\Helper\\Updater';
 
 // API
-$this->module('cockpit')->extend([
 
-    'markdown' => function($content, $extra = false) use($app) {
+$this->module("cockpit")->extend([
+
+    // General Api
+
+    "assets" => function($assets, $key=null, $cache=0, $cache_folder=null) use($app) {
+
+        $key          = $key ? $key : md5(serialize($assets));
+        $cache_folder = $cache_folder ? $cache_folder : $app->path("cache:assets");
+
+        $app("assets")->style_and_script($assets, $key, $cache_folder, $cache);
+    },
+
+    "markdown" => function($content, $extra = false) use($app) {
 
         static $parseDown;
         static $parsedownExtra;
@@ -19,7 +29,7 @@ $this->module('cockpit')->extend([
         return $extra ? $parsedownExtra->text($content) : $parseDown->text($content);
     },
 
-    'clearCache' => function() use($app) {
+    "clearCache" => function() use($app) {
 
         $dirs = ['#cache:','#tmp:','#thumbs:'];
 
@@ -35,28 +45,28 @@ $this->module('cockpit')->extend([
                 @unlink($file->getRealPath());
             }
 
-            $app->helper('fs')->removeEmptySubFolders('#cache:');
+            $app->helper("fs")->removeEmptySubFolders('#cache:');
         }
 
-        $app->trigger('cockpit.clearcache');
+        $app->trigger("cockpit.clearcache");
 
         $size = 0;
 
-        foreach ($dirs as $dir) {
-            $size += $app->helper('fs')->getDirSize($dir);
+        foreach($dirs as $dir) {
+            $size += $app->helper("fs")->getDirSize($dir);
         }
 
-        return ['size'=>$app->helper('utils')->formatSize($size)];
+        return ["size"=>$app->helper("utils")->formatSize($size)];
     },
 
-    'loadApiKeys' => function() {
+    "loadApiKeys" => function() {
 
         $keys      = [ 'master' => '', 'special' => [] ];
         $container = $this->app->path('#storage:').'/api.keys.php';
 
         if (file_exists($container)) {
             $data = include($container);
-            $data = unserialize($this->app->decode($data, $this->app['sec-key']));
+            $data = unserialize($this->app->decode($data, $this->app["sec-key"]));
 
             if ($data !== false) {
                 $keys = array_merge($keys, $data);
@@ -66,7 +76,7 @@ $this->module('cockpit')->extend([
         return $keys;
     },
 
-    'saveApiKeys' => function($data) {
+    "saveApiKeys" => function($data) {
 
         $data      = serialize(array_merge([ 'master' => '', 'special' => [] ], (array)$data));
         $export    = var_export($this->app->encode($data, $this->app["sec-key"]), true);
@@ -75,38 +85,22 @@ $this->module('cockpit')->extend([
         return $this->app->helper('fs')->write($container, "<?php\n return {$export};");
     },
 
-    /**
-     * Generate thumbnail
-     * @param array $options {
-     *   @var string [cachefolder=thumbs://] - Cache folder
-     *   @var string $source - Source file path
-     *   @var string [$mode=thumbnail] - One of thumbnail|bestFit|resize|fitToWidth|fitToHeight
-     *   @var string [$fp] - Position
-     *   @var array [$filters] - Associative array of filters and it's options: ['sepia', 'sharpen']
-     *   @var integer [$width] - Output width
-     *   @var integer [$height] - Output height
-     *   @var integer [$quality=100] - Output quality
-     *   @var boolean [$rebuild=false] - Force image rebuild
-     *   @var boolean [$base64=false] - Base64 output
-     *   @var boolean [$output=false] - Echo response and exit application
-     * }
-     * @return string URL to file or Base64 output
-     */
-    'thumbnail' => function($options) {
+    "thumbnail" => function($options) {
 
-        $options = array_merge([
-            'cachefolder' => 'thumbs://',
+        $options = array_merge(array(
+            'cachefolder' => '#thumbs:',
             'src' => '',
             'mode' => 'thumbnail',
             'fp' => null,
-            'filters' => [],
+            'filter' => '',
             'width' => false,
             'height' => false,
             'quality' => 100,
             'rebuild' => false,
             'base64' => false,
-            'output' => false
-        ], $options);
+            'output' => false,
+            'domain' => false
+        ), $options);
 
         extract($options);
 
@@ -118,97 +112,46 @@ $this->module('cockpit')->extend([
             return ['error' => 'Missing src parameter'];
         }
 
-        $src   = str_replace('../', '', rawurldecode($src));
-        $asset = null;
+        $src = str_replace('../', '', rawurldecode($src));
 
-        // is asset?
-        if (strpos($src, $this->app->filestorage->getUrl('assets://')) === 0) {
+        if (!preg_match('/\.(png|jpg|jpeg|gif)$/i', $src)) {
 
-            $path = trim(str_replace(rtrim($this->app->filestorage->getUrl('assets://'), '/'), '', $src), '/');
+            if ($asset = $this->app->storage->findOne("cockpit/assets", ['_id' => $src])) {
+                $asset['path'] = trim($asset['path'], '/');
+                $src = $this->app->path("#uploads:{$asset['path']}");
 
-            try {
-
-                if ($this->app->filestorage->has('assets://'.$path)) {
-
-                    $asset = $this->app->storage->findOne('cockpit/assets', ['path' => "/{$path}"]);
-
-                    if (!$asset) {
-                        $asset = ['path' => "/{$path}"];
-                    }
-
-                } else {
-                    return $src;
+                if ($src) {
+                    $src = str_replace(COCKPIT_SITE_DIR, '', $src);
                 }
 
-            } catch (\Exception $e) {
-                return $src;
-            }
-
-        } elseif (!preg_match('/\.(png|jpg|jpeg|gif|svg)$/i', $src)) {
-            $asset = $this->app->storage->findOne('cockpit/assets', ['_id' => $src]);
-        }
-
-        if ($asset) {
-
-            $asset['path'] = trim($asset['path'], '/');
-            $src = $this->app->path("#uploads:{$asset['path']}");
-
-            if (!$src && $this->app->filestorage->has('assets://'.$asset['path'])) {
-
-                $stream = $this->app->filestorage->readStream('assets://'.$asset['path']);
-
-                if ($stream) {
-                   $this->app->filestorage->writeStream('uploads://'.$asset['path'], $stream);
-                   $src = $this->app->path("#uploads:{$asset['path']}");
+                if (isset($asset['fp']) && !$fp) {
+                    $fp = $asset['fp']['x'].' '.$asset['fp']['y'];
                 }
-            }
 
-            if ($src) {
-                $src = str_replace(COCKPIT_SITE_DIR, '', $src);
-            }
-
-            if (isset($asset['fp']) && !$fp) {
-                $fp = $asset['fp']['x'].' '.$asset['fp']['y'];
             }
         }
 
         if ($src) {
 
-            $path = trim(str_replace(rtrim($this->app->filestorage->getUrl('site://'), '/'), '', $src), '/');
+            $src = ltrim($src, '/');
 
-            if (file_exists(COCKPIT_SITE_DIR.'/'.$path)) {
-                $src = COCKPIT_SITE_DIR.'/'.$path;
-            } elseif (file_exists(COCKPIT_DOCS_ROOT.'/'.$path)) {
-                $src = COCKPIT_DOCS_ROOT.'/'.$path;
+            if (file_exists(COCKPIT_SITE_DIR.'/'.$src)) {
+                $src = COCKPIT_SITE_DIR.'/'.$src;
+            } elseif (file_exists(COCKPIT_DOCS_ROOT.'/'.$src)) {
+                $src = COCKPIT_DOCS_ROOT.'/'.$src;
             }
         }
 
         $path  = $this->app->path($src);
-        $ext   = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $ext   = pathinfo($path, PATHINFO_EXTENSION);
+        $url   = "data:image/gif;base64,R0lGODlhAQABAJEAAAAAAP///////wAAACH5BAEHAAIALAAAAAABAAEAAAICVAEAOw=="; // transparent 1px gif
 
         if (!file_exists($path) || is_dir($path)) {
             return false;
         }
 
-        // handle svg files
-        if ($ext == 'svg') {
-
-            if ($base64) {
-                return 'data:image/svg+xml;base64,'.base64_encode(file_get_contents($path));
-            }
-
-            if ($output) {
-                header('Content-Type: image/svg+xml');
-                header('Content-Length: '.filesize($path));
-                echo file_get_contents($path);
-                $this->app->stop();
-            }
-
-            return $this->app->pathToUrl($path, true);
-        }
-
-        if (!in_array($ext, ['png','jpg','jpeg','gif'])) {
-            return $this->app->pathToUrl($path, true);
+        if (!in_array(strtolower($ext), array('png','jpg','jpeg','gif'))) {
+            return $url;
         }
 
         if (!$width || !$height) {
@@ -220,7 +163,7 @@ $this->module('cockpit')->extend([
         }
 
         if (is_null($width) && is_null($height)) {
-            return $this->app->pathToUrl($path, true);
+            return $this->app->pathToUrl($path);
         }
 
         if (!$fp) {
@@ -235,9 +178,9 @@ $this->module('cockpit')->extend([
 
         $filetime = filemtime($path);
         $hash = md5($path.json_encode($options))."_{$width}x{$height}_{$quality}_{$filetime}_{$mode}_".md5($fp).".{$ext}";
-        $thumbpath = $cachefolder."/{$hash}";
+        $savepath = rtrim($this->app->path($cachefolder), '/')."/{$hash}";
 
-        if ($rebuild || !$this->app->filestorage->has($thumbpath)) {
+        if ($rebuild || !file_exists($savepath)) {
 
             try {
 
@@ -251,63 +194,268 @@ $this->module('cockpit')->extend([
                     'flip', 'invert', 'opacity', 'pixelate', 'sepia', 'sharpen', 'sketch'
                 ];
 
-                // Apply single filter
-                foreach ($_filters as $f) {
+                foreach($_filters as $f) {
 
                     if (isset($options[$f])) {
                         $img->{$f}($options[$f]);
                     }
                 }
 
-                // Apply multiple filters
-                foreach ($filters as $filterName => $filterOptions) {
-                    // Handle non-associative array
-                    if (is_int($filterName)) {
-                        $filterName = $filterOptions;
-                        $filterOptions = [];
-                    }
-
-                    if (in_array($filterName, $_filters)) {
-                        call_user_func_array([$img, $filterName], (array) $filterOptions);
-                    }
-                }
-
-                $this->app->filestorage->write($thumbpath, $img->toString(null, $quality));
-
-                unset($img);
-
+                $img->toFile($savepath, null, $quality);
             } catch(Exception $e) {
-                return "data:image/gif;base64,R0lGODlhAQABAJEAAAAAAP///////wAAACH5BAEHAAIALAAAAAABAAEAAAICVAEAOw=="; // transparent 1px gif
+                return $url;
             }
         }
 
         if ($base64) {
-            return "data:image/{$ext};base64,".base64_encode($this->app->filestorage->read($thumbpath));
+            return "data:image/{$ext};base64,".base64_encode(file_get_contents($savepath));
         }
 
         if ($output) {
             header("Content-Type: image/{$ext}");
-            header('Content-Length: '.$this->app->filestorage->getSize($thumbpath));
-            echo $this->app->filestorage->read($thumbpath);
+            header('Content-Length: '.filesize($savepath));
+            readfile($savepath);
             $this->app->stop();
         }
 
-        return $this->app->filestorage->getURL($thumbpath);
+        $url = $this->app->pathToUrl($savepath);
+
+        if ($domain) {
+
+            $_url = ($this->app->req_is('ssl') ? 'https':'http').'://';
+
+            if (!in_array($this->app['base_port'], ['80', '443'])) {
+                $_url .= $this->app['base_host'].":".$this->app['base_port'];
+            } else {
+                $_url .= $this->app['base_host'];
+            }
+
+            $url = rtrim($_url, '/').$url;
+        }
+
+        return $url;
     }
 ]);
 
 
-// Additional module Api
-include_once(__DIR__.'/module/auth.php');
-include_once(__DIR__.'/module/assets.php');
+// Auth Api
+$this->module("cockpit")->extend([
+
+    "authenticate" => function($data) use($app) {
+
+        $data = array_merge([
+            "user"     => "",
+            "email"    => "",
+            "group"    => "",
+            "password" => ""
+        ], $data);
+
+        if (!$data["password"]) return false;
+
+        $user = $app->storage->findOne("cockpit/accounts", [
+            "user"   => $data["user"],
+            "active" => true
+        ]);
+
+        if (count($user) && password_verify($data["password"], $user["password"])) {
+
+            $user = array_merge($data, (array)$user);
+
+            unset($user["password"]);
+
+            return $user;
+        }
+
+        return false;
+    },
+
+    "setUser" => function($user, $permanent = true) use($app) {
+
+        if ($permanent) {
+            $app("session")->write('cockpit.app.auth', $user);
+        }
+
+        $app['cockpit.auth.user'] = $user;
+    },
+
+    "getUser" => function($prop = null, $default = null) use($app) {
+
+        $user = $app->retrieve('cockpit.auth.user');
+
+        if (is_null($user)) {
+            $user = $app("session")->read('cockpit.app.auth', null);
+        }
+
+        if (!is_null($prop)) {
+            return $user && isset($user[$prop]) ? $user[$prop] : $default;
+        }
+
+        return $user;
+    },
+
+    "logout" => function() use($app) {
+        $app("session")->delete('cockpit.app.auth');
+    },
+
+    "hasaccess" => function($resource, $action, $group = null) use($app) {
+
+        if (!$group) {
+            $user = $this->getUser();
+            $group = isset($user["group"]) ? $user["group"] : null;
+        }
+
+        if ($group) {
+            if ($app("acl")->hasaccess($group, $resource, $action)) return true;
+        }
+
+        return false;
+    },
+
+    "getGroup" => function() use($app) {
+
+        $user = $this->getUser();
+
+        if (isset($user["group"])) {
+            return $user["group"];
+        }
+
+        return false;
+    },
+
+    "getGroupRights" => function($resource, $group = null) use($app) {
+
+        if ($group) {
+            return $app("acl")->getGroupRights($group, $resource);
+        }
+
+        $user = $this->getUser();
+
+        if (isset($user["group"])) {
+            return $app("acl")->getGroupRights($user["group"], $resource);
+        }
+
+        return false;
+    },
+
+    "isSuperAdmin" => function($group = null) use($app) {
+
+        if (!$group) {
+
+            $user = $this->getUser();
+
+            if (isset($user["group"])) {
+                $group = $user["group"];
+            }
+        }
+
+        return $group ? $app("acl")->isSuperAdmin($group) : false;
+    },
+
+    "getGroups" => function() use($app) {
+
+        $groups = array_merge(['admin'], array_keys($app->retrieve("config/groups", [])));
+
+        return array_unique($groups);
+    },
+
+    "getGroupVar" => function($setting, $default = null) use($app) {
+
+        if ($user = $this->getUser()) {
+
+            if (isset($user['group']) && $user['group']) {
+
+                return $app('acl')->getVar($user['group'], $setting, $default);
+            }
+        }
+
+        return $default;
+    },
+
+    "userInGroup" => function($groups) use($app) {
+
+        $user = $this->getUser();
+
+        return (isset($user["group"]) && in_array($user["group"], (array)$groups));
+    },
+
+    "updateUserOption" => function($key, $value) use($app) {
+
+        if ($user = $this->getUser()) {
+
+            $data = isset($user['data']) && is_array($user['data']) ? $user['data'] : [];
+
+            $data[$key] = $value;
+
+            $app->storage->update('cockpit/accounts', ['_id' => $user['_id']], ['data' => $data]);
+
+            return $value;
+        }
+
+        return false;
+    }
+]);
+
+// ACL
+$app('acl')->addResource('cockpit', [
+    'backend', 'finder',
+]);
 
 
-// ADMIN
-if (COCKPIT_ADMIN && !COCKPIT_API_REQUEST) {
+// init acl groups + permissions + settings
 
-    include_once(__DIR__.'/admin.php');
+$app('acl')->addGroup('admin', true);
 
-    $this->bind('/api.js', function() {
+/*
+groups:
+    author:
+        $admin: false
+        $vars:
+            finder.path: /upload
+        cockpit:
+            backend: true
+            finder: true
+
+*/
+
+$aclsettings = $app->retrieve('config/groups', []);
+
+foreach ($aclsettings as $group => $settings) {
+
+    $isSuperAdmin = $settings === true || (isset($settings['$admin']) && $settings['$admin']);
+    $vars         = isset($settings['$vars']) ? $settings['$vars'] : [];
+
+    $app('acl')->addGroup($group, $isSuperAdmin, $vars);
+
+    if (!$isSuperAdmin && is_array($settings)) {
+
+        foreach ($settings as $resource => $actions) {
+
+            if ($resource == '$vars' || $resource == '$admin') continue;
+
+            foreach ((array)$actions as $action => $allow) {
+                if ($allow) {
+                    $app('acl')->allow($group, $resource, $action);
+                }
+            }
+        }
+    }
+}
+
+
+// REST
+if (COCKPIT_API_REQUEST) {
+
+    // INIT REST API HANDLER
+    include_once(__DIR__.'/rest-api.php');
+
+    $this->on('cockpit.rest.init', function($routes) {
+        $routes['cockpit'] = 'Cockpit\\Controller\\RestApi';
+    });
+}
+
+if (COCKPIT_ADMIN) {
+
+    $this->bind("/api.js", function() {
 
         $token                = $this->param('token', '');
         $this->response->mime = 'js';
@@ -326,23 +474,13 @@ if (COCKPIT_ADMIN && !COCKPIT_API_REQUEST) {
     });
 }
 
-// CLI
-if (COCKPIT_CLI) {
-    $this->path('#cli', __DIR__.'/cli');
+
+// ADMIN
+if (COCKPIT_ADMIN && !COCKPIT_API_REQUEST) {
+
+    include_once(__DIR__.'/admin.php');
 }
+
 
 // WEBHOOKS
-if (!defined('COCKPIT_INSTALL')) {
-    include_once(__DIR__.'/webhooks.php');
-}
-
-// REST
-if (COCKPIT_API_REQUEST) {
-
-    // INIT REST API HANDLER
-    include_once(__DIR__.'/rest-api.php');
-
-    $this->on('cockpit.rest.init', function($routes) {
-        $routes['cockpit'] = 'Cockpit\\Controller\\RestApi';
-    });
-}
+include_once(__DIR__.'/webhooks.php');

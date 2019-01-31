@@ -39,7 +39,7 @@ class Img {
     }
 
     public function show($format=null, $quality=100) {
-        $this->image->toScreen($format, $quality);
+        $this->image->output($format, $quality);
     }
 
     public function blur($passes = 1, $type = 'gaussian') {
@@ -76,13 +76,7 @@ class Img {
     }
 
     public function __call($method, $args) {
-
-        $ret = call_user_func_array([$this->image, $method], $args);
-
-        if ($ret !== $this->image) {
-            return $ret;
-        }
-
+        call_user_func_array([$this->image, $method], $args);
         return $this;
     }
 }

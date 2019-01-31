@@ -27,7 +27,7 @@
 
                             <img class="uk-margin-small-right uk-svg-adjust" src="@url(isset($form['icon']) && $form['icon'] ? 'assets:app/media/icons/'.$form['icon']:'forms:icon.svg')" width="18px" alt="icon" data-uk-svg>
 
-                            {{ htmlspecialchars(@$form['label'] ? $form['label'] : $form['name']) }}
+                            {{ @$form['label'] ? $form['label'] : $form['name'] }}
                         </a>
                     </li>
                     @endforeach
@@ -35,11 +35,9 @@
 
             </div>
 
-            @if(count($forms) > 5)
-            <div class="uk-panel-box-footer uk-text-center">
-                <a class="uk-button uk-button-small uk-button-link" href="@route('/forms')">@lang('Show all')</a>
+            <div class="uk-panel-box-footer">
+                <a href="@route('/forms')">@lang('See all')</a>
             </div>
-            @endif
 
         @else
 
@@ -49,7 +47,11 @@
                     <img src="@url('forms:icon.svg')" width="30" height="30" alt="Forms" data-uk-svg />
                 </p>
 
-                @lang('No forms')
+                @lang('No forms'). 
+
+                @hasaccess?('forms', 'create')
+                <a href="@route('/forms/form')">@lang('Create a form')</a>.
+                @end
 
             </div>
 

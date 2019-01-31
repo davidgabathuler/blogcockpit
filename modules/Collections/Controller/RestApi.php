@@ -36,43 +36,26 @@ class RestApi extends \LimeExtra\Controller {
         if ($skip     = $this->param('skip', null))     $options['skip'] = intval($skip);
         if ($populate = $this->param('populate', null)) $options['populate'] = $populate;
 
-        // cast string values if get request
-        if ($filter && isset($_GET['filter'])) $options['filter'] = $this->_fixStringBooleanValues($filter);
-        if ($fields && isset($_GET['fields'])) $options['fields'] = $this->_fixStringBooleanValues($fields);
-
         // fields filter
         $fieldsFilter = [];
 
         if ($fieldsFilter = $this->param('fieldsFilter', [])) $options['fieldsFilter'] = $fieldsFilter;
         if ($lang = $this->param('lang', false)) $fieldsFilter['lang'] = $lang;
-        if ($ignoreDefaultFallback = $this->param('ignoreDefaultFallback', false)) $fieldsFilter['ignoreDefaultFallback'] = in_array($ignoreDefaultFallback, ['1', '0']) ? boolval($ignoreDefaultFallback) : $ignoreDefaultFallback;
-        if ($user) $fieldsFilter['user'] = $user;
+        if ($ignoreDefaultFallback = $this->param('ignoreDefaultFallback', false)) $fieldsFilter['ignoreDefaultFallback'] = $ignoreDefaultFallback;
+        if ($user) $fieldsFilter["user"] = $user;
 
         if (is_array($fieldsFilter) && count($fieldsFilter)) {
             $options['fieldsFilter'] = $fieldsFilter;
         }
 
-        if ($sort) {
+        if (isset($options["sort"])) {
 
             foreach ($sort as $key => &$value) {
-                $options['sort'][$key]= intval($value);
+                $options["sort"][$key]= intval($value);
             }
         }
 
         $entries = $this->module('collections')->find($collection['name'], $options);
-        $count = count($entries);
-        $isSortable = $collection['sortable'] ?? false;
-
-        // sort by custom order if collection is sortable
-        if (!$sort && !$filter && $isSortable && $count) {
-
-            $entries = $this->helper('utils')->buildTree($entries, [
-                'parent_id_column_name' => '_pid',
-                'children_key_name'     => 'children',
-                'id_column_name'        => '_id',
-    			'sort_column_name'      => '_o'
-            ]);
-        }
 
         // return only entries array - due to legacy
         if ((boolean) $this->param('simple', false)) {
@@ -102,7 +85,7 @@ class RestApi extends \LimeExtra\Controller {
         return [
             'fields'   => $fields,
             'entries'  => $entries,
-            'total'    => (!$skip && !$limit) ? $count : $this->module('collections')->count($collection['name'], $filter ? $filter : [])
+            'total'    => (!$skip && !$limit) ? count($entries) : $this->module('collections')->count($collection['name'], $filter ? $filter : [])
         ];
 
         return $entries;
@@ -125,17 +108,7 @@ class RestApi extends \LimeExtra\Controller {
             return $this->stop('{"error": "Unauthorized"}', 401);
         }
 
-        $userId = $this->module('cockpit')->getUser('_id');
-
-        if (isset($data[0])) {
-
-            foreach ($data as &$entry) {
-                $entry['_by'] = $userId;
-            }
-
-        } else {
-            $data['_by'] = $userId;
-        }
+        $data['_by'] = $this->module('cockpit')->getUser('_id');
 
         $data = $this->module('collections')->save($collection, $data);
 
@@ -220,9 +193,9 @@ class RestApi extends \LimeExtra\Controller {
         $user = $this->module('cockpit')->getUser();
 
         if ($user) {
-            $collections = $this->module('collections')->getCollectionsInGroup($user['group'], true);
+            $collections = $this->module("collections")->getCollectionsInGroup($user['group'], true);
         } else {
-            $collections = $this->module('collections')->collections(true);
+            $collections = $this->module("collections")->collections(true);
         }
 
         if (!isset($collections[$name])) {
@@ -237,36 +210,11 @@ class RestApi extends \LimeExtra\Controller {
         $user = $this->module('cockpit')->getUser();
 
         if ($user) {
-            $collections = $this->module('collections')->getCollectionsInGroup($user['group'], $extended);
+            $collections = $this->module("collections")->getCollectionsInGroup($user['group'], $extended);
         } else {
             $collections = $this->module('collections')->collections($extended);
         }
 
         return $extended ? $collections : array_keys($collections);
-    }
-
-    protected function _fixStringBooleanValues(&$array) {
-
-        if (!is_array($array)) {
-            return $array;
-        }
-
-        foreach ($array as $k => $v) {
-
-            if (is_array($array[$k])) {
-                $array[$k] = $this->_fixStringBooleanValues($array[$k]);
-            }
-
-            if (is_string($v)) {
-
-                if ($v === 'true' || $v === 'false') {
-                    $v = filter_var($v, FILTER_VALIDATE_BOOLEAN);
-                }
-            }
-
-            $array[$k] = $v;
-        }
-
-        return $array;
     }
 }

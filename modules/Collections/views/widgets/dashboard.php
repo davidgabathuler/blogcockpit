@@ -28,7 +28,7 @@
 
                                     <img class="uk-margin-small-right uk-svg-adjust" src="@url(isset($col['icon']) && $col['icon'] ? 'assets:app/media/icons/'.$col['icon']:'collections:icon.svg')" width="18px" alt="icon" data-uk-svg>
 
-                                    {{ htmlspecialchars(@$col['label'] ? $col['label'] : $col['name']) }}
+                                    {{ @$col['label'] ? $col['label'] : $col['name'] }}
                                 </a>
                             </div>
                             <div>
@@ -45,11 +45,9 @@
 
             </div>
 
-            @if(count($collections) > 5)
-            <div class="uk-panel-box-footer uk-text-center">
-                <a class="uk-button uk-button-small uk-button-link" href="@route('/collections')">@lang('Show all')</a>
+            <div class="uk-panel-box-footer">
+                <a href="@route('/collections')">@lang('See all')</a>
             </div>
-            @endif
 
         @else
 
@@ -59,7 +57,11 @@
                     <img src="@url('collections:icon.svg')" width="30" height="30" alt="Collections" data-uk-svg />
                 </p>
 
-                @lang('No collections')
+                @lang('No collections').
+
+                @hasaccess?('collections', 'create')
+                <a href="@route('/collections/collection')">@lang('Create a collection')</a>.
+                @end
             </div>
 
         @endif

@@ -1,5 +1,5 @@
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
-// Distributed under an MIT license: https://codemirror.net/LICENSE
+// Distributed under an MIT license: http://codemirror.net/LICENSE
 
 (function(mod) {
   if (typeof exports == "object" && typeof module == "object") // CommonJS
@@ -98,7 +98,7 @@
       var pos = this.cm.getCursor(), line = this.cm.getLine(pos.line);
       if (pos.line != this.startPos.line || line.length - pos.ch != this.startLen - this.startPos.ch ||
           pos.ch < this.startPos.ch || this.cm.somethingSelected() ||
-          (!pos.ch || this.options.closeCharacters.test(line.charAt(pos.ch - 1)))) {
+          (pos.ch && this.options.closeCharacters.test(line.charAt(pos.ch - 1)))) {
         this.close();
       } else {
         var self = this;
@@ -121,6 +121,7 @@
       var picked = (this.widget && this.widget.picked) || (first && this.options.completeSingle);
       if (this.widget) this.widget.close();
 
+      if (data && this.data && isNewCompletion(this.data, data)) return;
       this.data = data;
 
       if (data && data.list.length) {
@@ -133,6 +134,11 @@
       }
     }
   };
+
+  function isNewCompletion(old, nw) {
+    var moved = CodeMirror.cmpPos(nw.from, old.from)
+    return moved > 0 && old.to.ch - old.from.ch != nw.to.ch - nw.from.ch
+  }
 
   function parseOptions(cm, pos, options) {
     var editor = cm.options.hintOptions;
@@ -200,8 +206,7 @@
     var widget = this, cm = completion.cm;
 
     var hints = this.hints = document.createElement("ul");
-    var theme = completion.cm.options.theme;
-    hints.className = "CodeMirror-hints " + theme;
+    hints.className = "CodeMirror-hints";
     this.selectedHint = data.selectedHint || 0;
 
     var completions = data.list;
@@ -334,7 +339,7 @@
         i = avoidWrap ? 0  : this.data.list.length - 1;
       if (this.selectedHint == i) return;
       var node = this.hints.childNodes[this.selectedHint];
-      if (node) node.className = node.className.replace(" " + ACTIVE_HINT_ELEMENT_CLASS, "");
+      node.className = node.className.replace(" " + ACTIVE_HINT_ELEMENT_CLASS, "");
       node = this.hints.childNodes[this.selectedHint = i];
       node.className += " " + ACTIVE_HINT_ELEMENT_CLASS;
       if (node.offsetTop < this.hints.scrollTop)
@@ -398,13 +403,12 @@
   });
 
   CodeMirror.registerHelper("hint", "fromList", function(cm, options) {
-    var cur = cm.getCursor(), token = cm.getTokenAt(cur)
-    var term, from = CodeMirror.Pos(cur.line, token.start), to = cur
-    if (token.start < cur.ch && /\w/.test(token.string.charAt(cur.ch - token.start - 1))) {
-      term = token.string.substr(0, cur.ch - token.start)
+    var cur = cm.getCursor(), token = cm.getTokenAt(cur);
+    var to = CodeMirror.Pos(cur.line, token.end);
+    if (token.string && /\w/.test(token.string[token.string.length - 1])) {
+      var term = token.string, from = CodeMirror.Pos(cur.line, token.start);
     } else {
-      term = ""
-      from = cur
+      var term = "", from = to;
     }
     var found = [];
     for (var i = 0; i < options.words.length; i++) {

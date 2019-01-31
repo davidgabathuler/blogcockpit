@@ -1,6 +1,6 @@
 <?php
 
-$this->module('collections')->extend([
+$this->module("collections")->extend([
 
     'createCollection' => function($name, $data = []) {
 
@@ -103,14 +103,14 @@ $this->module('collections')->extend([
 
         if ($collection = $this->collection($name)) {
 
-            $this->app->helper('fs')->delete("#storage:collections/{$name}.collection.php");
+            $this->app->helper("fs")->delete("#storage:collections/{$name}.collection.php");
 
             // remove rules
             foreach (['create', 'read', 'update', 'delete'] as $method) {
-                $this->app->helper('fs')->delete("#storage:collections/rules/{$name}.{$method}.php");
+                $this->app->helper("fs")->delete("#storage:collections/rules/{$name}.{$method}.php");
             }
 
-            $this->app->storage->dropCollection("collections/{$collection['_id']}");
+            $this->app->storage->dropCollection("collections/{$collection}");
 
             $this->app->trigger('collections.removecollection', [$name]);
             $this->app->trigger("collections.removecollection.{$name}", [$name]);
@@ -125,7 +125,7 @@ $this->module('collections')->extend([
 
         $stores = [];
 
-        foreach($this->app->helper('fs')->ls('*.collection.php', '#storage:collections') as $path) {
+        foreach($this->app->helper("fs")->ls('*.collection.php', '#storage:collections') as $path) {
 
             $store = include($path->getPathName());
 
@@ -189,8 +189,11 @@ $this->module('collections')->extend([
 
         // sort by custom order if collection is sortable
         if (isset($_collection['sortable']) && $_collection['sortable'] && !isset($options['sort'])) {
-            //$options['sort'] = ['_o' => 1];
+            $options['sort'] = ['_order' => 1];
         }
+
+        $this->app->trigger('collections.find.before', [$name, &$options, false]);
+        $this->app->trigger("collections.find.before.{$name}", [$name, &$options, false]);
 
         // check rule
         $context = new \stdClass();
@@ -201,9 +204,6 @@ $this->module('collections')->extend([
         } else {
             $options = $context->options;
         }
-
-        $this->app->trigger('collections.find.before', [$name, &$options, false]);
-        $this->app->trigger("collections.find.before.{$name}", [$name, &$options, false]);
 
         $entries = (array)$this->app->storage->find("collections/{$collection}", $options);
 
@@ -253,7 +253,7 @@ $this->module('collections')->extend([
 
         $entries = $this->find($name, $options);
 
-        return $entries[0] ?? null;
+        return isset($entries[0]) ? $entries[0] : null;
     },
 
     'save' => function($collection, $data, $options = []) {
@@ -286,7 +286,7 @@ $this->module('collections')->extend([
                     }
 
                     if (!isset($entry[$field['name']])) {
-                        $value = $field['default'] ?? '';
+                        $value = isset($field['default']) ? $field['default'] : '';
                     } else {
                         $value = $entry[$field['name']];
                     }
@@ -330,10 +330,6 @@ $this->module('collections')->extend([
                             break;
                     }
 
-                    if (!$isUpdate && isset($field['required']) && $field['required'] && !$value) {
-                        // Todo
-                    }
-
                     if ($isUpdate && $field['type'] == 'password' && !$value && isset($entry[$field['name']])) {
                         unset($entry[$field['name']]);
                     } else {
@@ -344,8 +340,11 @@ $this->module('collections')->extend([
             }
 
             if (!$isUpdate) {
-                $entry['_created'] = $entry['_modified'];
+                $entry["_created"] = $entry["_modified"];
             }
+
+            $this->app->trigger('collections.save.before', [$name, &$entry, $isUpdate]);
+            $this->app->trigger("collections.save.before.{$name}", [$name, &$entry, $isUpdate]);
 
             // check rule
             $context = _check_collection_rule($_collection, 'read', [
@@ -359,9 +358,6 @@ $this->module('collections')->extend([
                 $entry   = $context->entry;
                 $options = $context->options;
             }
-
-            $this->app->trigger('collections.save.before', [$name, &$entry, $isUpdate]);
-            $this->app->trigger("collections.save.before.{$name}", [$name, &$entry, $isUpdate]);
 
             $ret = $this->app->storage->save("collections/{$collection}", $entry);
 
@@ -387,6 +383,9 @@ $this->module('collections')->extend([
         $name       = $collection;
         $collection = $_collection['_id'];
 
+        $this->app->trigger('collections.remove.before', [$name, &$criteria]);
+        $this->app->trigger("collections.remove.before.{$name}", [$name, &$criteria]);
+
         // check rule
         $context = _check_collection_rule($_collection, 'remove', ['options' => ['filter' => $criteria]]);
 
@@ -395,9 +394,6 @@ $this->module('collections')->extend([
         } else {
             $criteria = $context->options['filter'];
         }
-
-        $this->app->trigger('collections.remove.before', [$name, &$criteria]);
-        $this->app->trigger("collections.remove.before.{$name}", [$name, &$criteria]);
 
         $result = $this->app->storage->remove("collections/{$collection}", $criteria);
 
@@ -500,11 +496,11 @@ $this->module('collections')->extend([
         if (!isset($cache[$collection['name']])) {
 
             $fields = [
-                'acl' => [],
-                'localize' => []
+                "acl" => [],
+                "localize" => []
             ];
 
-            foreach ($collection['fields'] as $field) {
+            foreach ($collection["fields"] as $field) {
 
                 if (isset($field['acl']) && is_array($field['acl']) && count($field['acl'])) {
                     $fields['acl'][$field['name']] = $field['acl'];
@@ -648,7 +644,7 @@ function _check_collection_rule($collection, $rule, $_context = null) {
 }
 
 // ACL
-$app('acl')->addResource("collections", ['create', 'delete']);
+$app("acl")->addResource("collections", ['create', 'delete']);
 
 $this->module("collections")->extend([
 
@@ -727,10 +723,6 @@ if (COCKPIT_API_REQUEST) {
 
 // ADMIN
 if (COCKPIT_ADMIN && !COCKPIT_API_REQUEST) {
-    include_once(__DIR__.'/admin.php');
-}
 
-// CLI
-if (COCKPIT_CLI) {
-    $this->path('#cli', __DIR__.'/cli');
+    include_once(__DIR__.'/admin.php');
 }

@@ -19,11 +19,9 @@ class Mailer {
 
         $options = array_merge($this->options, is_array($options) ? $options: []);
 
-        $message = $this->createMessage($to, $subject, $message, $options);
+        $message = $this->createMessage($to, $subject, $message);
 
-        if (isset($options['from'])) {
-            $message->setFrom($options['from'], $options['from_name'] ?? '');
-        }
+        $message->setFrom(isset($options['from']) ? $options['from'] : 'mailer@'.(isset($_SERVER["SERVER_NAME"]) ? $_SERVER["SERVER_NAME"] : 'localhost'));
 
         if (isset($options['reply_to'])) {
             $message->addReplyTo($options['reply_to']);
@@ -32,7 +30,7 @@ class Mailer {
         return $message->send();
     }
 
-    public function createMessage($to, $subject, $message, $options=[]) {
+    public function createMessage($to, $subject, $message) {
 
         $mail = new PHPMailer();
 
@@ -72,48 +70,17 @@ class Mailer {
 
         $mail->Subject = $subject;
         $mail->Body    = $message;
+        $mail->AltBody = strip_tags($message);
         $mail->CharSet = 'utf-8';
 
-        $mail->IsHTML($message !=  strip_tags($message)); // auto-set email format to HTML
-
-        $to_array = explode(',', $to);
+        $to_array = explode(",", $to);
 
         foreach ($to_array as $to_single) {
             $mail->addAddress($to_single);
         }
 
-        if (isset($options['altMessage']) && $options['altMessage']) {
-            $mail->AltBody = $options['altMessage'];
-        }
-
-        if (isset($options['embedded'])) {
-            foreach ($options['embedded'] as $id => $file) {
-                $mail->AddEmbeddedImage($file, $id);
-            }
-        }
-
-        if (isset($options['attachments'])) {
-
-            foreach ($options['attachments'] as $id => $file) {
-
-                if (is_string($id)) {
-                    $mail->addStringAttachment($file, $id);
-                } else {
-                    $mail->addAttachment($file);
-                }
-            }
-        }
-
-        if (isset($options['cc'])) {
-            foreach ($options['cc'] as $email) {
-                $mail->AddCC($email);
-            }
-        }
-
-        if (isset($options['bcc'])) {
-            foreach ($options['bcc'] as $email) {
-                $mail->addBCC($email);
-            }
+        if ($mail->Body != $mail->AltBody) {
+            $mail->IsHTML(true); // Set email format to HTML
         }
 
         $msg = new Mailer_Message($mail);

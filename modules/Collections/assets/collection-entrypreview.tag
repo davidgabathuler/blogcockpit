@@ -240,9 +240,10 @@
             this.refs.iframe.addEventListener('load', function() {
 
                 $this.$iframe = $this.refs.iframe.contentWindow;
-                $this.$idle   = setInterval(_.throttle(function() {
 
-                    var hash = JSON.stringify({entry:$this.entry, lang: $this.lang});
+                $this.$idle = setInterval(_.throttle(function() {
+
+                    var hash = JSON.stringify($this.entry);
 
                     if ($this.$cache != hash) {
                         $this.$cache = hash;
@@ -257,10 +258,6 @@
             this.refs.selectGroup.value = this.group;
 
             document.body.style.overflow = 'hidden';
-        });
-
-        this.on('unmount', function() {
-            clearTimeout(this.$idle);
         });
 
         setMode(mode) {

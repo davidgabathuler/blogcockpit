@@ -20,8 +20,8 @@
 
     <script>
         // App constants
-        var SITE_URL   = '{{ rtrim($app->filestorage->getUrl('site://'), '/') }}';
-        var ASSETS_URL = '{{ rtrim($app->filestorage->getUrl('assets://'), '/') }}';
+        var SITE_URL   = '{{ rtrim($app->pathToUrl('site:'), '/') }}';
+        var ASSETS_URL = '{{ rtrim($app->pathToUrl('#uploads:'), '/') }}';
     </script>
     <script src="@base('assets:lib/fuc.js.php')"></script>
     {{ $app->assets($app('admin')->data->get('assets'), $app['debug'] ? time() : $app['cockpit/version']) }}
@@ -30,8 +30,6 @@
 
     <script>
         App.$data = {{ json_encode($app('admin')->data->get('extract')) }};
-        UIkit.modal.labels.Ok = App.i18n.get(UIkit.modal.labels.Ok);
-        UIkit.modal.labels.Cancel = App.i18n.get(UIkit.modal.labels.Cancel);
     </script>
 
     @trigger('app.layout.header')
@@ -52,7 +50,7 @@
 
                         <div class="uk-display-inline-block" data-uk-dropdown="delay:400,mode:'click'">
 
-                            <a href="@route('/')" class="uk-link-muted uk-text-bold app-name-link">
+                            <a href="@route('/')" class="uk-link-muted uk-text-bold">
                                 <i class="uk-icon-bars"></i>
                                 <span class="app-name">{{ $app['app.name'] }}</span>
                             </a>
@@ -64,7 +62,7 @@
                                     <div class="uk-width-medium-1-3">
 
                                         <div class="uk-margin">
-                                            <span class="uk-badge uk-badge-outline uk-text-primary">@lang('System')</span>
+                                            <span class="uk-badge uk-badge-primary">@lang('System')</span>
                                         </div>
 
                                         <ul class="uk-nav uk-nav-side uk-nav-dropdown app-nav">
@@ -96,7 +94,7 @@
                                     <div class="uk-grid-margin uk-width-medium-2-3">
 
                                         <div class="uk-margin">
-                                            <span class="uk-badge uk-badge-outline uk-text-primary">@lang('Modules')</span>
+                                            <span class="uk-badge uk-badge-primary">@lang('Modules')</span>
                                         </div>
 
                                         @if($app('admin')->data['menu.modules']->count())
@@ -149,7 +147,7 @@
                                     @endif
 
                                     @if($item['active'])
-                                    <span class="uk-text-small uk-margin-small-left uk-text-bolder">@lang($item['label'])</span>
+                                    <span class="uk-text-small uk-margin-small-left uk-text-bolder">{{ $item['label'] }}</span>
                                     @endif
                                 </a>
                             </li>
@@ -160,7 +158,7 @@
 
                     <div>
 
-                        <div data-uk-dropdown="mode:'click'">
+                        <div data-uk-dropdown="delay:150">
 
                             <a class="uk-display-block" href="@route('/accounts/account')" style="width:30px;height:30px;" riot-mount>
                                 <cp-gravatar email="{{ $app['user']['email'] }}" size="30" alt="{{ $app["user"]["name"] ? $app["user"]["name"] : $app["user"]["user"] }}"></cp-gravatar>
@@ -200,10 +198,6 @@
     <!-- RIOT COMPONENTS -->
     @foreach($app('admin')->data['components'] as $component)
     <script type="riot/tag" src="@base($component)"></script>
-    @endforeach
-
-    @foreach($app('fs')->ls('*.tag', '#config:tags') as $component)
-    <script type="riot/tag" src="{{$app->pathToUrl('#config:tags/'.$component->getBasename())}}"></script>
     @endforeach
 
 </body>
